@@ -9,8 +9,6 @@ type Config struct {
 
 var AppConfig = Config{
 	StorageType: "file",                           // Change to "db" when needed
-	UserFile:    "data/users.json",                // Path to user data file
-	SessionFile: "data/sessions.json",             // Path to session data file
 	DBURL:       "postgres://user:pass@localhost", // Placeholder (not used for file mode)
 }
 
