@@ -25,7 +25,7 @@ func (r *ReturnRequestDBRepo) CreateReturnRequest(req models.ReturnRequest) erro
 	VALUES ($1, $2, $3)
 	RETURNING id
 	`
-	err := r.db.QueryRow(query, req.OrderID, req.Status, time.Now()).Scan(&req.ID)
+	err := r.db.QueryRow(query, req.OrderID, req.Status.String(), time.Now()).Scan(&req.ID)
 	if err != nil {
 		return err
 	}
@@ -34,12 +34,7 @@ func (r *ReturnRequestDBRepo) CreateReturnRequest(req models.ReturnRequest) erro
 
 // UpdateReturnRequestStatus updates the status of a return request
 func (r *ReturnRequestDBRepo) UpdateReturnRequestStatus(id int, newStatus string) error {
-	statusEnum, err := return_request_status.ParseStatus(newStatus)
-	if err != nil {
-		return err
-	}
-
-	result, err := r.db.Exec("UPDATE return_requests SET status=$1 WHERE id=$2", statusEnum, id)
+	result, err := r.db.Exec("UPDATE return_requests SET status=$1 WHERE id=$2", newStatus, id)
 	if err != nil {
 		return err
 	}
@@ -59,7 +54,7 @@ func (r *ReturnRequestDBRepo) GetAllReturnRequests(filterStatuses []string) ([]m
 
 	if len(filterStatuses) > 0 {
 		baseQuery += " WHERE status = ANY($1)"
-		args = append(args, pq.Array(filterStatuses)) // requires import "github.com/lib/pq"
+		args = append(args, pq.Array(filterStatuses))
 	}
 
 	rows, err := r.db.Query(baseQuery, args...)
@@ -69,9 +64,14 @@ func (r *ReturnRequestDBRepo) GetAllReturnRequests(filterStatuses []string) ([]m
 	defer rows.Close()
 
 	var requests []models.ReturnRequest
+	var statusStr string
 	for rows.Next() {
 		var rr models.ReturnRequest
-		if err := rows.Scan(&rr.ID, &rr.OrderID, &rr.Status, &rr.CreatedAt); err != nil {
+		if err := rows.Scan(&rr.ID, &rr.OrderID, &statusStr, &rr.CreatedAt); err != nil {
+			continue
+		}
+		rr.Status, err = return_request_status.ParseStatus(statusStr)
+		if err != nil {
 			continue
 		}
 		requests = append(requests, rr)
@@ -84,12 +84,19 @@ func (r *ReturnRequestDBRepo) GetAllReturnRequests(filterStatuses []string) ([]m
 func (r *ReturnRequestDBRepo) GetReturnRequestByID(id int) (models.ReturnRequest, error) {
 	row := r.db.QueryRow("SELECT id, order_id, status, created_at FROM return_requests WHERE id=$1", id)
 	var rr models.ReturnRequest
-	if err := row.Scan(&rr.ID, &rr.OrderID, &rr.Status, &rr.CreatedAt); err != nil {
+	var statusStr string
+	if err := row.Scan(&rr.ID, &rr.OrderID, &statusStr, &rr.CreatedAt); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return models.ReturnRequest{}, errors.New("return request not found")
 		}
 		return models.ReturnRequest{}, err
 	}
+	status, err := return_request_status.ParseStatus(statusStr)
+
+	if err != nil {
+		return models.ReturnRequest{}, err
+	}
+	rr.Status = status
 	return rr, nil
 }
 

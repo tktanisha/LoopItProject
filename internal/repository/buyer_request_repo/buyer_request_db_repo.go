@@ -35,9 +35,14 @@ func (r *BuyerRequestDBRepo) GetAllBuyerRequests(filterStatuses []string) ([]mod
 	defer rows.Close()
 
 	var requests []models.BuyingRequest
+	var statusStr string
 	for rows.Next() {
 		var rq models.BuyingRequest
-		if err := rows.Scan(&rq.ID, &rq.ProductID, &rq.RequestedBy, &rq.Status, &rq.CreatedAt); err != nil {
+		if err := rows.Scan(&rq.ID, &rq.ProductID, &rq.RequestedBy, &statusStr, &rq.CreatedAt); err != nil {
+			continue
+		}
+		rq.Status, err = buyer_request_status.ParseStatus(statusStr)
+		if err != nil {
 			continue
 		}
 		requests = append(requests, rq)
@@ -48,12 +53,7 @@ func (r *BuyerRequestDBRepo) GetAllBuyerRequests(filterStatuses []string) ([]mod
 
 // UpdateStatusBuyerRequest updates the status of a buyer request
 func (r *BuyerRequestDBRepo) UpdateStatusBuyerRequest(id int, newStatus string) error {
-	statusEnum, err := buyer_request_status.ParseStatus(newStatus)
-	if err != nil {
-		return err
-	}
-
-	result, err := r.db.Exec("UPDATE buying_requests SET status=$1 WHERE id=$2", statusEnum, id)
+	result, err := r.db.Exec("UPDATE buying_requests SET status=$1 WHERE id=$2", newStatus, id)
 	if err != nil {
 		return err
 	}
@@ -73,7 +73,7 @@ func (r *BuyerRequestDBRepo) CreateBuyerRequest(req models.BuyingRequest) error 
 	VALUES ($1, $2, $3, $4)
 	RETURNING id
 	`
-	return r.db.QueryRow(query, req.ProductID, req.RequestedBy, req.Status, time.Now()).Scan(&req.ID)
+	return r.db.QueryRow(query, req.ProductID, req.RequestedBy, req.Status.String(), time.Now()).Scan(&req.ID)
 }
 
 // GetBuyerRequestByID fetches a buyer request by ID
@@ -81,12 +81,19 @@ func (r *BuyerRequestDBRepo) GetBuyerRequestByID(id int) (*models.BuyingRequest,
 	row := r.db.QueryRow("SELECT id, product_id, requested_by, status, created_at FROM buying_requests WHERE id=$1", id)
 
 	var req models.BuyingRequest
-	if err := row.Scan(&req.ID, &req.ProductID, &req.RequestedBy, &req.Status, &req.CreatedAt); err != nil {
+	var statusStr string
+	if err := row.Scan(&req.ID, &req.ProductID, &req.RequestedBy, &statusStr, &req.CreatedAt); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, errors.New("buying request not found")
 		}
 		return nil, err
 	}
+	status, err := buyer_request_status.ParseStatus(statusStr)
+
+	if err != nil {
+		return nil, err
+	}
+	req.Status = status
 
 	return &req, nil
 }

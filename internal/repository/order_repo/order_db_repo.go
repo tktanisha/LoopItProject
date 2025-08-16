@@ -30,7 +30,7 @@ func (r *OrderDBRepo) CreateOrder(order models.Order) error {
 	VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 	RETURNING id
 	`
-	err := r.db.QueryRow(query, order.ProductID, order.UserID, order.StartDate, order.EndDate, order.TotalAmount, order.SecurityAmount, order.Status, time.Now()).Scan(&order.ID)
+	err := r.db.QueryRow(query, order.ProductID, order.UserID, order.StartDate, order.EndDate, order.TotalAmount, order.SecurityAmount, order.Status.String(), time.Now()).Scan(&order.ID)
 	if err != nil {
 		return err
 	}
@@ -39,12 +39,7 @@ func (r *OrderDBRepo) CreateOrder(order models.Order) error {
 
 // UpdateOrderStatus updates the status of an order
 func (r *OrderDBRepo) UpdateOrderStatus(orderID int, newStatus string) error {
-	statusEnum, err := order_status.ParseStatus(newStatus)
-	if err != nil {
-		return err
-	}
-
-	result, err := r.db.Exec("UPDATE orders SET status=$1 WHERE id=$2", statusEnum, orderID)
+	result, err := r.db.Exec("UPDATE orders SET status=$1 WHERE id=$2", newStatus, orderID)
 	if err != nil {
 		return err
 	}
@@ -74,11 +69,17 @@ func (r *OrderDBRepo) GetOrderHistory(userID int, filterStatuses []string) ([]*m
 	defer rows.Close()
 
 	var orders []*models.Order
+	var statusStr string
 	for rows.Next() {
 		var o models.Order
-		if err := rows.Scan(&o.ID, &o.ProductID, &o.UserID, &o.StartDate, &o.EndDate, &o.TotalAmount, &o.SecurityAmount, &o.Status, &o.CreatedAt); err != nil {
+		if err := rows.Scan(&o.ID, &o.ProductID, &o.UserID, &o.StartDate, &o.EndDate, &o.TotalAmount, &o.SecurityAmount, &statusStr, &o.CreatedAt); err != nil {
 			continue
 		}
+		o.Status, err = order_status.ParseStatus(statusStr)
+		if err != nil {
+			continue
+		}
+
 		orders = append(orders, &o)
 	}
 
@@ -100,9 +101,14 @@ func (r *OrderDBRepo) GetLenderOrders(userID int) ([]*models.Order, error) {
 	defer rows.Close()
 
 	var orders []*models.Order
+	var statusStr string
 	for rows.Next() {
 		var o models.Order
-		if err := rows.Scan(&o.ID, &o.ProductID, &o.UserID, &o.StartDate, &o.EndDate, &o.TotalAmount, &o.SecurityAmount, &o.Status, &o.CreatedAt); err != nil {
+		if err := rows.Scan(&o.ID, &o.ProductID, &o.UserID, &o.StartDate, &o.EndDate, &o.TotalAmount, &o.SecurityAmount, &statusStr, &o.CreatedAt); err != nil {
+			continue
+		}
+		o.Status, err = order_status.ParseStatus(statusStr)
+		if err != nil {
 			continue
 		}
 		orders = append(orders, &o)
@@ -116,12 +122,18 @@ func (r *OrderDBRepo) GetOrderByID(orderID int) (*models.Order, error) {
 	row := r.db.QueryRow("SELECT id, product_id, user_id, start_date, end_date, total_amount, security_amount, status, created_at FROM orders WHERE id=$1", orderID)
 
 	var o models.Order
-	if err := row.Scan(&o.ID, &o.ProductID, &o.UserID, &o.StartDate, &o.EndDate, &o.TotalAmount, &o.SecurityAmount, &o.Status, &o.CreatedAt); err != nil {
+	var statusStr string
+	if err := row.Scan(&o.ID, &o.ProductID, &o.UserID, &o.StartDate, &o.EndDate, &o.TotalAmount, &o.SecurityAmount, &statusStr, &o.CreatedAt); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, errors.New("order not found")
 		}
 		return nil, err
 	}
+	status, err := order_status.ParseStatus(statusStr)
+	if err != nil {
+		return nil, err
+	}
+	o.Status = status
 	return &o, nil
 }
 
