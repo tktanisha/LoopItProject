@@ -3,8 +3,10 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
 	"loopit/cli"
 	"loopit/cli/commands"
+	"loopit/cli/initializer"
 	"loopit/cli/utils"
 	"loopit/internal/config"
 	"loopit/internal/db"
@@ -18,15 +20,15 @@ import (
 
 func cleanup() {
 	fmt.Println("Saving all the files...")
-	commands.UserFileRepo.Save()
-	commands.ProductFileRepo.Save()
-	commands.LenderFileRepo.Save()
-	commands.CategoryFileRepo.Save()
-	commands.BuyerRequestFileRepo.Save()
-	commands.OrderFileRepo.Save()
-	commands.ReturnRequestFileRepo.Save()
-	commands.FeedBackFileRepo.Save()
-	commands.SocietyFileRepo.Save()
+	initializer.UserRepo.Save()
+	initializer.ProductRepo.Save()
+	initializer.LenderRepo.Save()
+	initializer.CategoryRepo.Save()
+	initializer.BuyerRequestRepo.Save()
+	initializer.OrderRepo.Save()
+	initializer.ReturnRequestRepo.Save()
+	initializer.FeedBackRepo.Save()
+	initializer.SocietyRepo.Save()
 }
 
 func main() {
@@ -54,8 +56,13 @@ func main() {
 		fmt.Printf("Error connecting to database: %v\n", err)
 		return
 	}
+	// err = db.ExecuteSQLFile(db.DB, "internal/db/init_db_table.sql")
+	// if err != nil {
+	// 	log.Fatalf("Error initializing tables: %v", err)
+	// }
 
-	commands.InitServices()
+	log.Println("Tables initialized successfully on remote Neon DB")
+	initializer.InitServices()
 	utils.ShowBanner()
 
 	ctx := context.Background()

@@ -24,8 +24,8 @@ func NewLenderFileRepo(lenderFile string) (*LenderFileRepo, error) {
 	}, nil
 }
 
-func (r *LenderFileRepo) FindAll() []models.Lender {
-	return r.lenders
+func (r *LenderFileRepo) FindAll() ([]models.Lender, error) {
+	return r.lenders, nil
 }
 
 func (r *LenderFileRepo) FindByID(userID int) (*models.Lender, error) {

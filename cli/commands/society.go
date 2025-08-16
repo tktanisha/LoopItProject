@@ -2,6 +2,7 @@ package commands
 
 import (
 	"fmt"
+	"loopit/cli/initializer"
 	"loopit/cli/utils"
 	"loopit/internal/config"
 	"loopit/internal/models"
@@ -11,7 +12,7 @@ import (
 )
 
 func GetAllSocieties() {
-	societies, err := SocietyService.GetAllSocieties()
+	societies, err := initializer.SocietyService.GetAllSocieties()
 	if err != nil {
 		fmt.Println(config.Red + "Error fetching societies: " + err.Error() + config.Reset)
 		return
@@ -44,7 +45,7 @@ func CreateSociety(userCtx *models.UserContext) {
 	location := utils.Input("Enter Society Location: ")
 	pincode := utils.Input("Enter Society Pincode: ")
 
-	if err := SocietyService.CreateSociety(name, location, pincode); err != nil {
+	if err := initializer.SocietyService.CreateSociety(name, location, pincode); err != nil {
 		fmt.Println(config.Red + "Error creating society: " + err.Error() + config.Reset)
 		return
 	}

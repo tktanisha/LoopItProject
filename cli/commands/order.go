@@ -2,6 +2,7 @@ package commands
 
 import (
 	"fmt"
+	"loopit/cli/initializer"
 	"loopit/cli/utils"
 	"loopit/internal/config"
 	"loopit/internal/enums"
@@ -27,7 +28,7 @@ func GetOrderHistory(userCtx *models.UserContext) {
 		filterStatus = append(filterStatus, orderStatus)
 	}
 
-	orders, err := OrderService.GetOrderHistory(userCtx, filterStatus)
+	orders, err := initializer.OrderService.GetOrderHistory(userCtx, filterStatus)
 	if err != nil {
 		fmt.Println(config.Red+"Error fetching order history:"+config.Reset, err)
 		return
@@ -50,7 +51,7 @@ func MarkOrderAsReturned(userCtx *models.UserContext) {
 
 	orderID := utils.IntConversion(utils.Input("Enter Order ID to mark as returned: "))
 
-	err := OrderService.MarkOrderAsReturned(orderID, userCtx)
+	err := initializer.OrderService.MarkOrderAsReturned(orderID, userCtx)
 	if err != nil {
 		fmt.Println(config.Red+"Error marking order as returned:"+config.Reset, err)
 		return
@@ -66,7 +67,7 @@ func GetAllApprovedAwaitingOrders(userCtx *models.UserContext) {
 		return
 	}
 
-	orders, err := OrderService.GetAllApprovedAwaitingOrders(userCtx)
+	orders, err := initializer.OrderService.GetAllApprovedAwaitingOrders(userCtx)
 	if err != nil {
 		fmt.Println(config.Red+"Error fetching approved awaiting orders:"+config.Reset, err)
 		return
@@ -87,7 +88,7 @@ func GetLenderOrders(userCtx *models.UserContext) {
 		return
 	}
 
-	orders, err := OrderService.GetLenderOrders(userCtx)
+	orders, err := initializer.OrderService.GetLenderOrders(userCtx)
 	if err != nil {
 		fmt.Println(config.Red+"Error fetching lender orders:"+config.Reset, err)
 		return

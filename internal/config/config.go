@@ -8,7 +8,7 @@ type Config struct {
 }
 
 var AppConfig = Config{
-	StorageType: "file",                           // Change to "db" when needed
+	StorageType: "db",                             // Change to "db" when needed
 	DBURL:       "postgres://user:pass@localhost", // Placeholder (not used for file mode)
 }
 

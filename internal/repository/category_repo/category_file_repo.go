@@ -35,9 +35,10 @@ func (r *CategoryFileRepo) FindByID(id int) (models.Category, error) {
 	return models.Category{}, errors.New("category not found")
 }
 
-func (r *CategoryFileRepo) Create(category models.Category) {
+func (r *CategoryFileRepo) Create(category models.Category) error {
 	category.ID = len(r.categories) + 1
 	r.categories = append(r.categories, category)
+	return nil
 }
 
 func (r *CategoryFileRepo) Save() error {

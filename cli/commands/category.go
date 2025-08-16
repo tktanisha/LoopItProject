@@ -2,6 +2,7 @@ package commands
 
 import (
 	"fmt"
+	"loopit/cli/initializer"
 	"loopit/cli/utils"
 	"loopit/internal/config"
 	"os"
@@ -15,7 +16,7 @@ func CreateCategory() {
 	price := utils.FloatConversion(utils.Input("Enter Price"))
 	security := utils.FloatConversion(utils.Input("Enter Security Deposit"))
 
-	err := CategoryService.CreateCategory(name, price, security)
+	err := initializer.CategoryService.CreateCategory(name, price, security)
 	if err != nil {
 		fmt.Println(config.Red+"Failed to create category:"+config.Reset, err)
 		return
@@ -25,7 +26,7 @@ func CreateCategory() {
 }
 
 func GetAllCategories() {
-	categories, err := CategoryService.GetAllCategories()
+	categories, err := initializer.CategoryService.GetAllCategories()
 	if err != nil {
 		fmt.Println(config.Red+"Failed to fetch categories:"+config.Reset, err)
 		return
