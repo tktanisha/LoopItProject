@@ -44,6 +44,10 @@ func (s *BuyerRequestService) CreateBuyerRequest(productID int, userCtx *models.
 		return errors.New("product not available")
 	}
 
+	if product.Product.LenderID == userCtx.ID {
+		return errors.New("lender cannot create a buying request for their own product")
+	}
+
 	// Check if a pending or approved request already exists
 	allRequests, err := s.buyerRequestRepo.GetAllBuyerRequests([]string{br_status.Pending.String(), br_status.Approved.String()})
 	if err != nil {

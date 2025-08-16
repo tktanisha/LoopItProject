@@ -3,10 +3,11 @@ package menus
 import (
 	"fmt"
 	"loopit/internal/config"
+	"loopit/internal/enums"
 )
 
 // PrintUserMenu - Display the main user dashboard menu
-func PrintUserMenu() {
+func PrintUserMenu(role enums.Role) {
 	fmt.Println(config.Green + "\n🛍️  USER DASHBOARD" + config.Reset)
 	fmt.Println(config.Cyan + "═══════════════════════════════════════" + config.Reset)
 	fmt.Println("[1] 🔍 Browse & Shop")
@@ -15,6 +16,14 @@ func PrintUserMenu() {
 	fmt.Println("[4] 👤 Account Management")
 	fmt.Println("[5] 🚪 Logout")
 	fmt.Println("[6] ❌ Exit")
+
+	if role == enums.RoleLender || role == enums.RoleAdmin {
+		fmt.Println("[7] 🏪 Switch to Lender Dashboard")
+	}
+
+	if role == enums.RoleAdmin {
+		fmt.Println("[8] ⚙️  Switch to Admin Dashboard")
+	}
 	fmt.Println(config.Cyan + "═══════════════════════════════════════" + config.Reset)
 }
 
@@ -26,9 +35,7 @@ func PrintLenderMenu() {
 	fmt.Println("[2] 🛒 Order Management")
 	fmt.Println("[3] 📋 Buyer Requests Management")
 	fmt.Println("[4] ⭐ Feedback & Returns")
-	fmt.Println("[5] 🔍 Browse as Customer")
-	fmt.Println("[6] 🚪 Logout")
-	fmt.Println("[7] ❌ Exit")
+	fmt.Println("[5] ⬅️  Back")
 	fmt.Println(config.Cyan + "═══════════════════════════════════════" + config.Reset)
 }
 
@@ -38,8 +45,6 @@ func PrintAdminMenu() {
 	fmt.Println(config.Cyan + "═══════════════════════════════════════" + config.Reset)
 	fmt.Println("[1] 🏗️  System Management")
 	fmt.Println("[2] 👥 User Management")
-	fmt.Println("[3] 🏪 Browse as Lender")
-	fmt.Println("[4] 🚪 Logout")
-	fmt.Println("[5] ❌ Exit")
+	fmt.Println("[3] ⬅️  Back")
 	fmt.Println(config.Cyan + "═══════════════════════════════════════" + config.Reset)
 }

@@ -92,8 +92,7 @@ func PrintLenderFeedbackMenu() {
 	fmt.Println("[1] 💬 Give Feedback")
 	fmt.Println("[2] 📤 My Given Feedbacks")
 	fmt.Println("[3] 📥 My Received Feedbacks")
-	fmt.Println("[4] 📤 Create Return Request")
-	fmt.Println("[5] ⬅️  Back")
+	fmt.Println("[4] ⬅️  Back")
 	fmt.Println(config.Cyan + "═══════════════════════════════════════" + config.Reset)
 }
 

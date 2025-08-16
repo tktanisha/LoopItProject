@@ -6,6 +6,7 @@ import (
 	"loopit/cli/commands"
 	"loopit/cli/menus"
 	"loopit/internal/config"
+	"loopit/internal/enums"
 	"loopit/internal/models"
 	"strings"
 )
@@ -13,7 +14,7 @@ import (
 // UserDashboard - Main dashboard for regular users
 func UserDashboard(ctx context.Context, userCtx *models.UserContext) {
 	for {
-		menus.PrintUserMenu()
+		menus.PrintUserMenu(userCtx.Role)
 		fmt.Print(config.Yellow + "Choose an option: " + config.Reset)
 		var choice string
 		fmt.Scanln(&choice)
@@ -26,13 +27,25 @@ func UserDashboard(ctx context.Context, userCtx *models.UserContext) {
 		case "3":
 			FeedbackMenu(ctx, userCtx)
 		case "4":
-			AccountMenu(ctx, userCtx)
+			AccountMenu(userCtx)
 		case "5":
 			commands.AuthLogout(&ctx)
 			return
 		case "6":
 			fmt.Println("Exiting. Goodbye!")
 			return
+		case "7":
+			if userCtx.Role == enums.RoleLender {
+				LenderDashboard(ctx, userCtx)
+			} else {
+				fmt.Println(config.Red + "Invalid option. Try again." + config.Reset)
+			}
+		case "8":
+			if userCtx.Role == enums.RoleAdmin {
+				AdminDashboard(ctx, userCtx)
+			} else {
+				fmt.Println(config.Red + "Invalid option. Try again." + config.Reset)
+			}
 		default:
 			fmt.Println(config.Red + "Invalid option. Try again." + config.Reset)
 		}
@@ -111,7 +124,7 @@ func FeedbackMenu(ctx context.Context, userCtx *models.UserContext) {
 }
 
 // AccountMenu - Account management for users
-func AccountMenu(ctx context.Context, userCtx *models.UserContext) {
+func AccountMenu(userCtx *models.UserContext) {
 	for {
 		menus.PrintAccountMenu()
 		fmt.Print(config.Yellow + "Choose an option: " + config.Reset)

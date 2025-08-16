@@ -32,13 +32,6 @@ func LenderDashboard(ctx context.Context, userCtx *models.UserContext) {
 			// Feedback & Returns
 			LenderFeedbackMenu(ctx, userCtx)
 		case "5":
-			// Browse as customer
-			BrowsingMenu(ctx, userCtx)
-		case "6":
-			commands.AuthLogout(&ctx)
-			return
-		case "7":
-			fmt.Println("Exiting. Goodbye!")
 			return
 		default:
 			fmt.Println(config.Red + "Invalid option. Try again." + config.Reset)
@@ -134,9 +127,7 @@ func LenderFeedbackMenu(ctx context.Context, userCtx *models.UserContext) {
 		case "3":
 			commands.GetAllReceivedFeedbacks(userCtx)
 		case "4":
-			commands.CreateReturnRequest(userCtx)
-		case "5":
-			return
+			LenderDashboard(ctx, userCtx)
 		default:
 			fmt.Println(config.Red + "Invalid option. Try again." + config.Reset)
 		}

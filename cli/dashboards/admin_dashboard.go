@@ -24,11 +24,9 @@ func AdminDashboard(ctx context.Context, userCtx *models.UserContext) {
 		case "2":
 			fmt.Println(config.Yellow + "User Management - Coming Soon!" + config.Reset)
 		case "3":
-			LenderDashboard(ctx, userCtx)
-		case "4":
 			commands.AuthLogout(&ctx)
 			return
-		case "5":
+		case "4":
 			fmt.Println("Exiting. Goodbye!")
 			return
 		default:
