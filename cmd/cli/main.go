@@ -1,31 +1,37 @@
-package cli
+package main
 
 import (
 	"context"
 	"fmt"
+	"log"
+	"loopit/cli"
 	"loopit/cli/commands"
+	"loopit/cli/initializer"
 	"loopit/cli/utils"
 	"loopit/internal/config"
+	"loopit/internal/db"
 	"os"
 	"os/signal"
 	"strings"
 	"syscall"
+
+	"github.com/joho/godotenv"
 )
 
 func cleanup() {
 	fmt.Println("Saving all the files...")
-	commands.UserFileRepo.Save()
-	commands.ProductFileRepo.Save()
-	commands.LenderFileRepo.Save()
-	commands.CategoryFileRepo.Save()
-	commands.BuyerRequestFileRepo.Save()
-	commands.OrderFileRepo.Save()
-	commands.ReturnRequestFileRepo.Save()
-	commands.FeedBackFileRepo.Save()
-	commands.SocietyFileRepo.Save()
+	initializer.UserRepo.Save()
+	initializer.ProductRepo.Save()
+	initializer.LenderRepo.Save()
+	initializer.CategoryRepo.Save()
+	initializer.BuyerRequestRepo.Save()
+	initializer.OrderRepo.Save()
+	initializer.ReturnRequestRepo.Save()
+	initializer.FeedBackRepo.Save()
+	initializer.SocietyRepo.Save()
 }
 
-func StartCLI() {
+func main() {
 	// Setup cleanup on interrupt
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
@@ -37,16 +43,29 @@ func StartCLI() {
 	}()
 	defer cleanup()
 
-	commands.InitServices()
+	err := godotenv.Load()
+	if err != nil {
+		fmt.Printf("Error loading .env file: %v\n", err)
+		return
+	}
+
+	DB_URL := os.Getenv("DB_URL")
+	err = db.ConnectDB(DB_URL)
+
+	if err != nil {
+		fmt.Printf("Error connecting to database: %v\n", err)
+		return
+	}
+	// err = db.ExecuteSQLFile(db.DB, "internal/db/init_db_table.sql")
+	// if err != nil {
+	// 	log.Fatalf("Error initializing tables: %v", err)
+	// }
+
+	log.Println("Tables initialized successfully on remote Neon DB")
+	initializer.InitServices()
 	utils.ShowBanner()
 
 	ctx := context.Background()
-
-	// userCtx, ok := utils.GetAuthenticatedUserFromContext(ctx)
-	// if ok && userCtx != nil {
-	// 	FeatureMenu(ctx)
-	// 	return
-	// }
 
 	for {
 		fmt.Println()
@@ -62,11 +81,11 @@ func StartCLI() {
 		switch strings.TrimSpace(choice) {
 		case "1":
 			if commands.AuthLogin(&ctx) {
-				FeatureMenu(ctx)
+				cli.FeatureMenu(ctx)
 			}
 		case "2":
 			if commands.AuthRegister(&ctx) {
-				FeatureMenu(ctx)
+				cli.FeatureMenu(ctx)
 			}
 		case "3":
 			fmt.Println("Exiting. Goodbye! ")

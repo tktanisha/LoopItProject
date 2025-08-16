@@ -2,6 +2,7 @@ package commands
 
 import (
 	"fmt"
+	"loopit/cli/initializer"
 	"loopit/cli/utils"
 	"loopit/internal/config"
 	"loopit/internal/models"
@@ -11,7 +12,7 @@ import (
 )
 
 func GetAllProducts() {
-	products, err := ProductService.GetAllProducts()
+	products, err := initializer.ProductService.GetAllProducts()
 	if err != nil {
 		fmt.Println(config.Red+"Error fetching products:"+config.Reset, err)
 		return
@@ -50,7 +51,7 @@ func GetAllProducts() {
 func GetProductByID() {
 	id := utils.IntConversion(utils.Input("Enter Product ID: "))
 
-	product, err := ProductService.GetProductByID(id)
+	product, err := initializer.ProductService.GetProductByID(id)
 	if err != nil {
 		fmt.Println(config.Red+"Error fetching product:"+config.Reset, err)
 		return
@@ -84,7 +85,7 @@ func CreateProduct(userCtx *models.UserContext) {
 	description := utils.Input("Enter Product Description: ")
 	duration := utils.IntConversion(utils.Input("Enter Product Duration (e.g., 30 for 30 days): "))
 
-	categories, err := CategoryService.GetAllCategories()
+	categories, err := initializer.CategoryService.GetAllCategories()
 	if err != nil {
 		fmt.Println(config.Red+"Error fetching categories:"+config.Reset, err)
 		return
@@ -110,7 +111,7 @@ func CreateProduct(userCtx *models.UserContext) {
 		IsAvailable: true,
 	}
 
-	err = ProductService.CreateProduct(product, userCtx)
+	err = initializer.ProductService.CreateProduct(product, userCtx)
 	if err != nil {
 		fmt.Println(config.Red+"Error creating product:"+config.Reset, err)
 		return

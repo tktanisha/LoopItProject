@@ -2,6 +2,7 @@ package commands
 
 import (
 	"fmt"
+	"loopit/cli/initializer"
 	"loopit/cli/utils"
 	"loopit/internal/config"
 	"loopit/internal/enums/return_request_status"
@@ -16,7 +17,7 @@ import (
 func CreateReturnRequest(userCtx *models.UserContext) {
 	orderID := utils.IntConversion(utils.Input("Enter Order ID to return: "))
 
-	err := ReturnRequestService.CreateReturnRequest(userCtx.ID, orderID)
+	err := initializer.ReturnRequestService.CreateReturnRequest(userCtx.ID, orderID)
 	if err != nil {
 		fmt.Println(config.Red+"Error creating return request:"+config.Reset, err)
 		return
@@ -28,7 +29,7 @@ func CreateReturnRequest(userCtx *models.UserContext) {
 // 2. Get all pending Return Requests (for user)
 func GetAllPendingReturnRequests(userCtx *models.UserContext) {
 
-	requests, err := ReturnRequestService.GetPendingReturnRequests(userCtx.ID)
+	requests, err := initializer.ReturnRequestService.GetPendingReturnRequests(userCtx.ID)
 	if err != nil {
 		fmt.Println(config.Red+"Error fetching pending return requests:"+config.Reset, err)
 		return
@@ -67,7 +68,7 @@ func UpdateReturnRequestStatus(userCtx *models.UserContext) {
 		return
 	}
 
-	err = ReturnRequestService.UpdateReturnRequestStatus(userCtx.ID, reqID, newStatus)
+	err = initializer.ReturnRequestService.UpdateReturnRequestStatus(userCtx.ID, reqID, newStatus)
 	if err != nil {
 		fmt.Println(config.Red+"Error updating return request status:"+config.Reset, err)
 		return

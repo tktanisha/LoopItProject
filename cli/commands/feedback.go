@@ -2,6 +2,7 @@ package commands
 
 import (
 	"fmt"
+	"loopit/cli/initializer"
 	"loopit/cli/utils"
 	"loopit/internal/models"
 	"os"
@@ -14,7 +15,7 @@ func GiveFeedback(userCtx *models.UserContext) {
 	feedbackText := utils.Input("Enter your feedback text")
 	rating := utils.IntConversion(utils.Input("Enter your rating (1-5)"))
 
-	err := FeedBackService.GiveFeedback(orderId, feedbackText, rating, userCtx)
+	err := initializer.FeedBackService.GiveFeedback(orderId, feedbackText, rating, userCtx)
 	if err != nil {
 		fmt.Printf("Error giving feedback: %v\n", err)
 		return
@@ -24,7 +25,7 @@ func GiveFeedback(userCtx *models.UserContext) {
 }
 
 func GetAllGivenFeedbacks(userCtx *models.UserContext) {
-	feedbacks, err := FeedBackService.GetAllGivenFeedbacks(userCtx)
+	feedbacks, err := initializer.FeedBackService.GetAllGivenFeedbacks(userCtx)
 	if err != nil {
 		fmt.Println("Error fetching given feedbacks:", err)
 		return
@@ -53,7 +54,7 @@ func GetAllGivenFeedbacks(userCtx *models.UserContext) {
 }
 
 func GetAllReceivedFeedbacks(userCtx *models.UserContext) {
-	feedbacks, err := FeedBackService.GetAllReceivedFeedbacks(userCtx)
+	feedbacks, err := initializer.FeedBackService.GetAllReceivedFeedbacks(userCtx)
 	if err != nil {
 		fmt.Println("Error fetching received feedbacks:", err)
 		return

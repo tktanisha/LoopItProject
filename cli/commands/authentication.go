@@ -3,6 +3,7 @@ package commands
 import (
 	"context"
 	"fmt"
+	"loopit/cli/initializer"
 	"loopit/cli/utils"
 	"loopit/internal/config"
 	"loopit/internal/constants"
@@ -16,7 +17,7 @@ import (
 // )
 
 func loginUtil(email, password string, ctx *context.Context) bool {
-	token, user, err := AuthService.Login(email, password)
+	token, user, err := initializer.AuthService.Login(email, password)
 	if err != nil {
 		fmt.Println(config.Red+"Login failed:"+config.Reset, err)
 		return false
@@ -56,7 +57,7 @@ func AuthRegister(ctx *context.Context) bool {
 	phoneNumber := utils.InputWithValidation("Enter Phone Number", validators.ValidatePhoneNumber)
 	address := utils.InputWithValidation("Enter Address", validators.ValidateAddress)
 
-	err := AuthService.Register(&models.User{
+	err := initializer.AuthService.Register(&models.User{
 		FullName:     fullname,
 		Email:        email,
 		PasswordHash: password,

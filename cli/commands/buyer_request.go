@@ -2,6 +2,7 @@ package commands
 
 import (
 	"fmt"
+	"loopit/cli/initializer"
 	"loopit/cli/utils"
 	"loopit/internal/config"
 	"loopit/internal/enums/buyer_request_status"
@@ -15,7 +16,7 @@ import (
 func CreateBuyerRequest(userCtx *models.UserContext) {
 	productID := utils.IntConversion(utils.Input("Enter Product ID to buy: "))
 
-	err := BuyerRequestService.CreateBuyerRequest(productID, userCtx)
+	err := initializer.BuyerRequestService.CreateBuyerRequest(productID, userCtx)
 	if err != nil {
 		fmt.Println(config.Red+"Error creating buyer request:"+config.Reset, err)
 		return
@@ -27,7 +28,7 @@ func CreateBuyerRequest(userCtx *models.UserContext) {
 // 2. Get all buyer requests (status = pending, approved, rejected)
 func GetAllBuyerRequests() {
 	productId := utils.IntConversion(utils.Input("Enter Product ID to fetch buyer requests: "))
-	requests, err := BuyerRequestService.GetAllBuyerRequestsByStatus(productId, buyer_request_status.Pending)
+	requests, err := initializer.BuyerRequestService.GetAllBuyerRequestsByStatus(productId, buyer_request_status.Pending)
 	if err != nil {
 		fmt.Println(config.Red+"Error fetching buyer requests:"+config.Reset, err)
 		return
@@ -74,7 +75,7 @@ func UpdateBuyerRequestStatus(userCtx *models.UserContext) {
 		return
 	}
 
-	err = BuyerRequestService.UpdateBuyerRequestStatus(reqID, selectedStatusEnum, userCtx)
+	err = initializer.BuyerRequestService.UpdateBuyerRequestStatus(reqID, selectedStatusEnum, userCtx)
 	if err != nil {
 		fmt.Println(config.Red+"Error updating status:"+config.Reset, err)
 		return
