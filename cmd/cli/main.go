@@ -3,13 +3,13 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
 	"loopit/cli"
 	"loopit/cli/commands"
 	"loopit/cli/initializer"
 	"loopit/cli/utils"
 	"loopit/internal/config"
 	"loopit/internal/db"
+	"loopit/pkg/logger"
 	"os"
 	"os/signal"
 	"strings"
@@ -32,6 +32,15 @@ func cleanup() {
 }
 
 func main() {
+
+	log := logger.GetLogger()
+	defer log.Close()
+
+	log.Info("Application started")
+	log.Debug("Debugging application")
+	log.Warning("This is a warning")
+	log.Error("Something went wrong!")
+
 	// Setup cleanup on interrupt
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
@@ -61,7 +70,7 @@ func main() {
 	// 	log.Fatalf("Error initializing tables: %v", err)
 	// }
 
-	log.Println("Tables initialized successfully on remote Neon DB")
+	// log.Println("Tables initialized successfully on remote Neon DB")
 	initializer.InitServices()
 	utils.ShowBanner()
 
