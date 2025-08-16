@@ -21,7 +21,7 @@ func (r *FeedBackDBRepo) CreateFeedback(feedback models.Feedback) error {
 	VALUES ($1, $2, $3, $4, $5)
 	RETURNING id
 	`
-	return r.db.QueryRow(query, feedback.GivenBy, feedback.GivenTo, feedback.Text, feedback.Rating, time.Now()).Scan(feedback.ID)
+	return r.db.QueryRow(query, feedback.GivenBy, feedback.GivenTo, feedback.Text, feedback.Rating, time.Now()).Scan(&feedback.ID)
 }
 
 // GetAllFeedbacks returns all feedbacks from the database
