@@ -54,7 +54,6 @@ func (s *FeedbackService) GiveFeedback(orderID int, feedbackText string, rating 
 	}
 
 	givenTo := product.Product.LenderID
-
 	if userCtx.ID == givenTo {
 		s.log.Warning(fmt.Sprintf("User %d attempted to give feedback to self for order %d", userCtx.ID, orderID))
 		return errors.New("you cannot give feedback to yourself")

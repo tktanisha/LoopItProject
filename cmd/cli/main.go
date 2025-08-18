@@ -36,11 +36,6 @@ func main() {
 	log := logger.GetLogger()
 	defer log.Close()
 
-	log.Info("Application started")
-	log.Debug("Debugging application")
-	log.Warning("This is a warning")
-	log.Error("Something went wrong!")
-
 	// Setup cleanup on interrupt
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)

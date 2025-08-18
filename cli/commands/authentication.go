@@ -9,22 +9,24 @@ import (
 	"loopit/internal/constants"
 	"loopit/internal/models"
 	validators "loopit/internal/utils"
+	"loopit/pkg/logger"
 )
 
-// var (
-// 	User_file_repo = user_repo.NewUserFileRepo("data/users.json", "data/sessions.json", "data/lenders.json")
-// 	authService    = auth_service.NewAuthService(User_file_repo)
-// )
+var log = logger.GetLogger()
 
 func loginUtil(email, password string, ctx *context.Context) bool {
+	log.Info(fmt.Sprintf("Login CLI initiated for email: %s", email))
+
 	token, user, err := initializer.AuthService.Login(email, password)
 	if err != nil {
+		log.Warning(fmt.Sprintf("Login CLI failed for email: %s, error: %v", email, err))
 		fmt.Println(config.Red+"Login failed:"+config.Reset, err)
 		return false
 	}
 
 	_, err = validators.ValidateJWT(token)
 	if err != nil {
+		log.Error(fmt.Sprintf("Token validation failed for email: %s, error: %v", email, err))
 		fmt.Println(config.Red+"Invalid token:"+config.Reset, err)
 		return false
 	}
@@ -36,12 +38,14 @@ func loginUtil(email, password string, ctx *context.Context) bool {
 	}
 	*ctx = context.WithValue(*ctx, constants.UserCtxKey, userCtx)
 
+	log.Info(fmt.Sprintf("Login CLI successful for email: %s", email))
 	fmt.Println(config.Green + "Logged in successfully" + config.Reset)
 
 	return true
 }
 
 func AuthLogin(ctx *context.Context) bool {
+	log.Info("AuthLogin CLI command started")
 	fmt.Println("\nLogin")
 	email := utils.InputWithValidation("Enter Email", validators.ValidateEmail)
 	password := utils.InputPassword("Enter Password", validators.ValidatePassword)
@@ -50,6 +54,7 @@ func AuthLogin(ctx *context.Context) bool {
 }
 
 func AuthRegister(ctx *context.Context) bool {
+	log.Info("AuthRegister CLI command started")
 	fmt.Println("\nCreate Account")
 	fullname := utils.InputWithValidation("Enter Full Name", validators.ValidateFullName)
 	email := utils.InputWithValidation("Enter Email", validators.ValidateEmail)
@@ -66,14 +71,17 @@ func AuthRegister(ctx *context.Context) bool {
 	})
 
 	if err != nil {
+		log.Warning(fmt.Sprintf("Registration CLI failed for email: %s, error: %v", email, err))
 		fmt.Println(config.Red+"Registration failed:"+config.Reset, err)
 		return false
 	}
 
+	log.Info(fmt.Sprintf("Registration CLI successful for email: %s", email))
 	return loginUtil(email, password, ctx)
 }
 
 func AuthLogout(ctx *context.Context) {
-	*ctx = nil // Clear context to remove user session
+	log.Info("Logout CLI command executed")
+	*ctx = nil
 	fmt.Println("Logged out successfully.")
 }

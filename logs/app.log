@@ -1,0 +1,58 @@
+2025-08-17 08:40:08 [INFO] Application started
+2025-08-17 08:40:08 [DEBUG] Debugging application
+2025-08-17 08:40:08 [WARNING] This is a warning
+2025-08-17 08:40:08 [ERROR] Something went wrong!
+2025-08-17 08:40:12 [INFO] AuthLogin CLI command started
+2025-08-17 08:40:33 [INFO] Login CLI initiated for email: tanu@gmail.com
+2025-08-17 08:40:33 [INFO] Login attempt for email: tanu@gmail.com
+2025-08-17 08:40:33 [WARNING] Invalid password for email: tanu@gmail.com
+2025-08-17 08:40:33 [WARNING] Login CLI failed for email: tanu@gmail.com, error: invalid credentials
+2025-08-17 08:40:52 [INFO] AuthLogin CLI command started
+2025-08-17 08:41:10 [INFO] Login CLI initiated for email: 
+2025-08-17 08:41:10 [INFO] Login attempt for email: 
+2025-08-17 08:41:10 [WARNING] Login failed, user not found: 
+2025-08-17 08:41:10 [WARNING] Login CLI failed for email: , error: invalid credentials
+2025-08-17 08:41:14 [INFO] Application started
+2025-08-17 08:41:14 [DEBUG] Debugging application
+2025-08-17 08:41:14 [WARNING] This is a warning
+2025-08-17 08:41:14 [ERROR] Something went wrong!
+2025-08-17 08:41:28 [INFO] AuthLogin CLI command started
+2025-08-17 08:41:36 [INFO] Login CLI initiated for email: tanu@gmail.com
+2025-08-17 08:41:36 [INFO] Login attempt for email: tanu@gmail.com
+2025-08-17 08:41:37 [INFO] Login successful for email: tanu@gmail.com
+2025-08-17 08:41:37 [INFO] Login CLI successful for email: tanu@gmail.com
+2025-08-17 20:22:26 [INFO] Application started
+2025-08-17 20:22:26 [DEBUG] Debugging application
+2025-08-17 20:22:26 [WARNING] This is a warning
+2025-08-17 20:22:26 [ERROR] Something went wrong!
+2025-08-17 20:22:30 [INFO] AuthLogin CLI command started
+2025-08-17 20:22:36 [INFO] Login CLI initiated for email: tanu@gmail.com
+2025-08-17 20:22:36 [INFO] Login attempt for email: tanu@gmail.com
+2025-08-17 20:22:37 [INFO] Login successful for email: tanu@gmail.com
+2025-08-17 20:22:37 [INFO] Login CLI successful for email: tanu@gmail.com
+2025-08-18 12:32:37 [INFO] AuthRegister CLI command started
+2025-08-18 12:33:08 [INFO] Register attempt for email: varsh@gmail.com
+2025-08-18 12:33:09 [INFO] User inserted into DB successfully, email=varsh@gmail.com, id=6
+2025-08-18 12:33:09 [INFO] User registered successfully: varsh@gmail.com
+2025-08-18 12:33:09 [INFO] Registration CLI successful for email: varsh@gmail.com
+2025-08-18 12:33:09 [INFO] Login CLI initiated for email: varsh@gmail.com
+2025-08-18 12:33:09 [INFO] Login attempt for email: varsh@gmail.com
+2025-08-18 12:33:09 [INFO] Login successful for email: varsh@gmail.com
+2025-08-18 12:33:09 [INFO] Login CLI successful for email: varsh@gmail.com
+2025-08-18 12:33:28 [INFO] CLI: Fetching all products
+2025-08-18 12:33:28 [INFO] Fetching all products
+2025-08-18 12:33:33 [INFO] Fetched 1 products successfully
+2025-08-18 12:33:41 [INFO] CLI: Fetching product by ID 1
+2025-08-18 12:33:41 [INFO] Fetching product by ID: 1
+2025-08-18 12:33:43 [INFO] Fetched product successfully: ID 1
+2025-08-18 12:33:48 [INFO] CLI: Fetching all categories
+2025-08-18 12:33:48 [INFO] Service: Fetching all categories
+2025-08-18 12:33:48 [INFO] Service: Successfully fetched 1 categories
+2025-08-18 12:33:50 [INFO] CLI: Fetching all societies
+2025-08-18 12:33:50 [INFO] Service: Fetching all societies
+2025-08-18 12:33:51 [INFO] Repo: Retrieved 1 societies
+2025-08-18 12:33:51 [INFO] Service: Successfully fetched 1 societies
+2025-08-18 12:34:01 [INFO] CLI: User 6 requests order history with status []
+2025-08-18 12:34:01 [INFO] Fetching order history for user 6 with role user
+2025-08-18 12:34:02 [INFO] Fetched 0 orders for user 6
+2025-08-18 12:34:02 [INFO] CLI: User 6 found no orders matching filter

@@ -58,7 +58,7 @@ func (l *Logger) processLogs() {
 	for msg := range l.ch {
 		formatted := l.formatMessage(msg)
 
-		fmt.Println(formatted)
+		// fmt.Println(formatted)
 
 		l.file.WriteString(formatted + "\n")
 	}
@@ -86,7 +86,6 @@ func (l *Logger) formatMessage(msg logMessage) string {
 	)
 }
 
-// Logging methods
 func (l *Logger) log(level LogLevel, msg string) {
 	if l.closing {
 		return
@@ -104,7 +103,6 @@ func (l *Logger) Fatal(msg string) {
 	os.Exit(1)
 }
 
-// Graceful shutdown
 func (l *Logger) Close() {
 	l.once.Do(func() {
 		l.closing = true

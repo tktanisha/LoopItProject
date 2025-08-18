@@ -20,6 +20,7 @@ import (
 	"loopit/internal/services/return_request_service"
 	"loopit/internal/services/society_service"
 	"loopit/internal/services/user_service"
+	"loopit/pkg/logger"
 )
 
 var (
@@ -47,8 +48,9 @@ var (
 )
 
 func InitServices() error {
+	logger := logger.GetLogger()
 	if config.AppConfig.StorageType == "db" {
-		return InitDBRepos()
+		return InitDBRepos(logger)
 	}
-	return InitFileRepos()
+	return InitFileRepos(logger)
 }

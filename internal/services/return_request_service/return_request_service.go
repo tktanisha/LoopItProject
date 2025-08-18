@@ -20,7 +20,12 @@ type returnRequestService struct {
 	log               *logger.Logger
 }
 
-func NewReturnRequestService(orderRepo order_repo.OrderRepo, productRepo product_repo.ProductRepo, rrRepo return_request_repo.ReturnRequestRepo, log *logger.Logger) ReturnRequestServiceInterface {
+func NewReturnRequestService(
+	orderRepo order_repo.OrderRepo,
+	productRepo product_repo.ProductRepo,
+	rrRepo return_request_repo.ReturnRequestRepo,
+	log *logger.Logger,
+) ReturnRequestServiceInterface {
 	return &returnRequestService{
 		orderRepo:         orderRepo,
 		returnRequestRepo: rrRepo,
@@ -67,8 +72,7 @@ func (s *returnRequestService) CreateReturnRequest(userID int, orderID int) erro
 		return err
 	}
 
-	err = s.returnRequestRepo.CreateReturnRequest(returnRequest)
-	if err != nil {
+	if err := s.returnRequestRepo.CreateReturnRequest(returnRequest); err != nil {
 		s.log.Error(fmt.Sprintf("Failed to create return request for order %d: %v", orderID, err))
 		return err
 	}
@@ -107,8 +111,7 @@ func (s *returnRequestService) UpdateReturnRequestStatus(userID int, reqID int, 
 		return errors.New("user does not own this order")
 	}
 
-	err = s.returnRequestRepo.UpdateReturnRequestStatus(req.ID, newStatus.String())
-	if err != nil {
+	if err := s.returnRequestRepo.UpdateReturnRequestStatus(req.ID, newStatus.String()); err != nil {
 		s.log.Error(fmt.Sprintf("Failed to update return request %d status: %v", reqID, err))
 		return err
 	}

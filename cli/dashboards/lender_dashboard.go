@@ -20,16 +20,16 @@ func LenderDashboard(ctx context.Context, userCtx *models.UserContext) {
 
 		switch strings.TrimSpace(choice) {
 		case "1":
-			// Product Management
+
 			LenderProductMenu(ctx, userCtx)
 		case "2":
-			// Order Management
+
 			LenderOrderMenu(ctx, userCtx)
 		case "3":
-			// Buyer Requests Management
+
 			LenderBuyerRequestMenu(ctx, userCtx)
 		case "4":
-			// Feedback & Returns
+
 			LenderFeedbackMenu(ctx, userCtx)
 		case "5":
 			return

@@ -14,7 +14,6 @@ func ReadJSONFile[T any](filePath string) ([]T, error) {
 	mu.Lock()
 	defer mu.Unlock()
 
-	// Ensure the directory exists
 	if err := ensureDirExists(filepath.Dir(filePath)); err != nil {
 		return nil, err
 	}
@@ -37,7 +36,6 @@ func WriteJSONFile[T any](filePath string, items []T) error {
 	mu.Lock()
 	defer mu.Unlock()
 
-	// Ensure the directory exists
 	if err := ensureDirExists(filepath.Dir(filePath)); err != nil {
 		return err
 	}
