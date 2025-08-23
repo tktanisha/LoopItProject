@@ -3,9 +3,11 @@ package order_repo
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"loopit/internal/enums/order_status"
 	"loopit/internal/models"
 	"loopit/internal/repository/product_repo"
+	"loopit/pkg/logger"
 	"time"
 
 	"github.com/lib/pq"
@@ -14,24 +16,27 @@ import (
 type OrderDBRepo struct {
 	db          *sql.DB
 	productRepo product_repo.ProductRepo
+	log         *logger.Logger
 }
 
-func NewOrderDBRepo(db *sql.DB, productRepo product_repo.ProductRepo) *OrderDBRepo {
+func NewOrderDBRepo(db *sql.DB, productRepo product_repo.ProductRepo, log *logger.Logger) *OrderDBRepo {
 	return &OrderDBRepo{
 		db:          db,
 		productRepo: productRepo,
+		log:         log,
 	}
 }
 
 // CreateOrder inserts a new order into the database
 func (r *OrderDBRepo) CreateOrder(order models.Order) error {
 	query := `
-	INSERT INTO orders (product_id, user_id, start_date, end_date, total_amount, security_amount, status, created_at)
-	VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-	RETURNING id
-	`
+    INSERT INTO orders (product_id, user_id, start_date, end_date, total_amount, security_amount, status, created_at)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+    RETURNING id
+    `
 	err := r.db.QueryRow(query, order.ProductID, order.UserID, order.StartDate, order.EndDate, order.TotalAmount, order.SecurityAmount, order.Status.String(), time.Now()).Scan(&order.ID)
 	if err != nil {
+		r.log.Error(fmt.Sprintf("DB error creating order: %v", err))
 		return err
 	}
 	return nil
@@ -41,14 +46,14 @@ func (r *OrderDBRepo) CreateOrder(order models.Order) error {
 func (r *OrderDBRepo) UpdateOrderStatus(orderID int, newStatus string) error {
 	result, err := r.db.Exec("UPDATE orders SET status=$1 WHERE id=$2", newStatus, orderID)
 	if err != nil {
+		r.log.Error(fmt.Sprintf("DB error updating order %d to status %s: %v", orderID, newStatus, err))
 		return err
 	}
-
 	rowsAffected, _ := result.RowsAffected()
 	if rowsAffected == 0 {
+		r.log.Warning(fmt.Sprintf("DB: No order found to update for id %d", orderID))
 		return errors.New("order not found")
 	}
-
 	return nil
 }
 
@@ -59,11 +64,12 @@ func (r *OrderDBRepo) GetOrderHistory(userID int, filterStatuses []string) ([]*m
 
 	if len(filterStatuses) > 0 {
 		query += " AND status = ANY($2)"
-		args = append(args, pq.Array(filterStatuses)) // requires import "github.com/lib/pq"
+		args = append(args, pq.Array(filterStatuses))
 	}
 
 	rows, err := r.db.Query(query, args...)
 	if err != nil {
+		r.log.Error(fmt.Sprintf("DB error fetching order history for user %d: %v", userID, err))
 		return nil, err
 	}
 	defer rows.Close()
@@ -73,29 +79,30 @@ func (r *OrderDBRepo) GetOrderHistory(userID int, filterStatuses []string) ([]*m
 	for rows.Next() {
 		var o models.Order
 		if err := rows.Scan(&o.ID, &o.ProductID, &o.UserID, &o.StartDate, &o.EndDate, &o.TotalAmount, &o.SecurityAmount, &statusStr, &o.CreatedAt); err != nil {
+			r.log.Warning(fmt.Sprintf("DB warning: could not scan order row: %v", err))
 			continue
 		}
 		o.Status, err = order_status.ParseStatus(statusStr)
 		if err != nil {
+			r.log.Warning(fmt.Sprintf("DB warning: could not parse order status: %v", err))
 			continue
 		}
-
 		orders = append(orders, &o)
 	}
-
 	return orders, nil
 }
 
 // GetLenderOrders returns orders for products owned by a lender
 func (r *OrderDBRepo) GetLenderOrders(userID int) ([]*models.Order, error) {
 	query := `
-	SELECT o.id, o.product_id, o.user_id, o.start_date, o.end_date, o.total_amount, o.security_amount, o.status, o.created_at
-	FROM orders o
-	JOIN products p ON o.product_id = p.id
-	WHERE p.lender_id=$1
-	`
+    SELECT o.id, o.product_id, o.user_id, o.start_date, o.end_date, o.total_amount, o.security_amount, o.status, o.created_at
+    FROM orders o
+    JOIN products p ON o.product_id = p.id
+    WHERE p.lender_id=$1
+    `
 	rows, err := r.db.Query(query, userID)
 	if err != nil {
+		r.log.Error(fmt.Sprintf("DB error fetching lender orders for user %d: %v", userID, err))
 		return nil, err
 	}
 	defer rows.Close()
@@ -105,32 +112,35 @@ func (r *OrderDBRepo) GetLenderOrders(userID int) ([]*models.Order, error) {
 	for rows.Next() {
 		var o models.Order
 		if err := rows.Scan(&o.ID, &o.ProductID, &o.UserID, &o.StartDate, &o.EndDate, &o.TotalAmount, &o.SecurityAmount, &statusStr, &o.CreatedAt); err != nil {
+			r.log.Warning(fmt.Sprintf("DB warning: could not scan lender order row: %v", err))
 			continue
 		}
 		o.Status, err = order_status.ParseStatus(statusStr)
 		if err != nil {
+			r.log.Warning(fmt.Sprintf("DB warning: could not parse lender order status: %v", err))
 			continue
 		}
 		orders = append(orders, &o)
 	}
-
 	return orders, nil
 }
 
 // GetOrderByID returns a single order by ID
 func (r *OrderDBRepo) GetOrderByID(orderID int) (*models.Order, error) {
 	row := r.db.QueryRow("SELECT id, product_id, user_id, start_date, end_date, total_amount, security_amount, status, created_at FROM orders WHERE id=$1", orderID)
-
 	var o models.Order
 	var statusStr string
 	if err := row.Scan(&o.ID, &o.ProductID, &o.UserID, &o.StartDate, &o.EndDate, &o.TotalAmount, &o.SecurityAmount, &statusStr, &o.CreatedAt); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
+			r.log.Warning(fmt.Sprintf("DB: No order found with id %d", orderID))
 			return nil, errors.New("order not found")
 		}
+		r.log.Error(fmt.Sprintf("DB error fetching order by id %d: %v", orderID, err))
 		return nil, err
 	}
 	status, err := order_status.ParseStatus(statusStr)
 	if err != nil {
+		r.log.Warning(fmt.Sprintf("DB warning: could not parse order status for id %d: %v", orderID, err))
 		return nil, err
 	}
 	o.Status = status

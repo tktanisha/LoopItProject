@@ -1,1 +1,1 @@
-# LoopIt (Neigbourhood Exchang Platform)
+# LoopIt (Neigbourhood Exchange Platform)

@@ -11,7 +11,7 @@ func PrintUserMenu(role enums.Role) {
 	fmt.Println(config.Green + "\n🛍️  USER DASHBOARD" + config.Reset)
 	fmt.Println(config.Cyan + "═══════════════════════════════════════" + config.Reset)
 	fmt.Println("[1] 🔍 Browse & Shop")
-	fmt.Println("[2] 📦 My Orders & Requests")
+	fmt.Println("[2] 📦 Orders & Requests")
 	fmt.Println("[3] ⭐ Feedback & Reviews")
 	fmt.Println("[4] 👤 Account Management")
 	fmt.Println("[5] 🚪 Logout")
@@ -34,7 +34,7 @@ func PrintLenderMenu() {
 	fmt.Println("[1] 📦 Product Management")
 	fmt.Println("[2] 🛒 Order Management")
 	fmt.Println("[3] 📋 Buyer Requests Management")
-	fmt.Println("[4] ⭐ Feedback & Returns")
+	fmt.Println("[4] ⭐ Feedback")
 	fmt.Println("[5] ⬅️  Back")
 	fmt.Println(config.Cyan + "═══════════════════════════════════════" + config.Reset)
 }

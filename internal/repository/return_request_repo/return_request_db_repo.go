@@ -3,30 +3,34 @@ package return_request_repo
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"loopit/internal/enums/return_request_status"
 	"loopit/internal/models"
+	"loopit/pkg/logger"
 	"time"
 
 	"github.com/lib/pq"
 )
 
 type ReturnRequestDBRepo struct {
-	db *sql.DB
+	db  *sql.DB
+	log *logger.Logger
 }
 
-func NewReturnRequestDBRepo(db *sql.DB) *ReturnRequestDBRepo {
-	return &ReturnRequestDBRepo{db: db}
+func NewReturnRequestDBRepo(db *sql.DB, log *logger.Logger) *ReturnRequestDBRepo {
+	return &ReturnRequestDBRepo{db: db, log: log}
 }
 
 // CreateReturnRequest inserts a new return request into the database
 func (r *ReturnRequestDBRepo) CreateReturnRequest(req models.ReturnRequest) error {
 	query := `
-	INSERT INTO return_requests (order_id, status, created_at)
-	VALUES ($1, $2, $3)
-	RETURNING id
-	`
+    INSERT INTO return_requests (order_id, status, created_at)
+    VALUES ($1, $2, $3)
+    RETURNING id
+    `
 	err := r.db.QueryRow(query, req.OrderID, req.Status.String(), time.Now()).Scan(&req.ID)
 	if err != nil {
+		r.log.Error("DB error creating return request: " + err.Error())
 		return err
 	}
 	return nil
@@ -36,11 +40,13 @@ func (r *ReturnRequestDBRepo) CreateReturnRequest(req models.ReturnRequest) erro
 func (r *ReturnRequestDBRepo) UpdateReturnRequestStatus(id int, newStatus string) error {
 	result, err := r.db.Exec("UPDATE return_requests SET status=$1 WHERE id=$2", newStatus, id)
 	if err != nil {
+		r.log.Error("DB error updating return request status: " + err.Error())
 		return err
 	}
 
 	rowsAffected, _ := result.RowsAffected()
 	if rowsAffected == 0 {
+		r.log.Warning("No return request found to update status for, id: " + fmt.Sprint(id))
 		return errors.New("return request not found")
 	}
 
@@ -59,6 +65,7 @@ func (r *ReturnRequestDBRepo) GetAllReturnRequests(filterStatuses []string) ([]m
 
 	rows, err := r.db.Query(baseQuery, args...)
 	if err != nil {
+		r.log.Error("DB error fetching all return requests: " + err.Error())
 		return nil, err
 	}
 	defer rows.Close()
@@ -87,13 +94,15 @@ func (r *ReturnRequestDBRepo) GetReturnRequestByID(id int) (models.ReturnRequest
 	var statusStr string
 	if err := row.Scan(&rr.ID, &rr.OrderID, &statusStr, &rr.CreatedAt); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
+			r.log.Warning("No return request record found in DB for id: " + fmt.Sprint(id))
 			return models.ReturnRequest{}, errors.New("return request not found")
 		}
+		r.log.Error("DB error fetching return request by id: " + err.Error())
 		return models.ReturnRequest{}, err
 	}
 	status, err := return_request_status.ParseStatus(statusStr)
-
 	if err != nil {
+		r.log.Error("DB error parsing status on return request: " + err.Error())
 		return models.ReturnRequest{}, err
 	}
 	rr.Status = status

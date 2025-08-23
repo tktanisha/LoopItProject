@@ -14,30 +14,30 @@ func PrintBrowsingMenu() {
 	fmt.Println("[1] 📱 View All Products")
 	fmt.Println("[2] 🔎 Search Product by ID")
 	fmt.Println("[3] 📋 View All Categories")
-	fmt.Println("[4] 🏘️  View All Societies")
+	fmt.Println("[4] 🏘️ View All Societies")
 	fmt.Println("[5] 📝 Create Buyer Request")
-	fmt.Println("[6] ⬅️  Back")
+	fmt.Println("[6] ⬅️ Back")
 	fmt.Println(config.Cyan + "═══════════════════════════════════════" + config.Reset)
 }
 
 // PrintUserOrdersMenu - Display the user orders and requests menu
 func PrintUserOrdersMenu() {
-	fmt.Println(config.Green + "\n📦 MY ORDERS & REQUESTS" + config.Reset)
+	fmt.Println(config.Green + "\n📦 ORDERS & REQUESTS" + config.Reset)
 	fmt.Println(config.Cyan + "═══════════════════════════════════════" + config.Reset)
 	fmt.Println("[1] 📜 View Order History")
 	fmt.Println("[2] 🔄 Update Return Request Status")
-	fmt.Println("[3] ⬅️  Back")
+	fmt.Println("[3] ⬅️ Back")
 	fmt.Println(config.Cyan + "═══════════════════════════════════════" + config.Reset)
 }
 
 // PrintFeedbackMenu - Display the feedback and reviews menu
 func PrintFeedbackMenu() {
-	fmt.Println(config.Green + "\n⭐ FEEDBACK & REVIEWS" + config.Reset)
+	fmt.Println(config.Green + "\n⭐ FEEDBACK" + config.Reset)
 	fmt.Println(config.Cyan + "═══════════════════════════════════════" + config.Reset)
 	fmt.Println("[1] 💬 Give Feedback")
-	fmt.Println("[2] 📤 My Given Feedbacks")
-	fmt.Println("[3] 📥 My Received Feedbacks")
-	fmt.Println("[4] ⬅️  Back")
+	fmt.Println("[2] 📤 Given Feedbacks")
+	fmt.Println("[3] 📥 Received Feedbacks")
+	fmt.Println("[4] ⬅️ Back")
 	fmt.Println(config.Cyan + "═══════════════════════════════════════" + config.Reset)
 }
 
@@ -45,7 +45,7 @@ func PrintFeedbackMenu() {
 func PrintAccountMenu() {
 	fmt.Println(config.Green + "\n👤 ACCOUNT MANAGEMENT" + config.Reset)
 	fmt.Println(config.Cyan + "═══════════════════════════════════════" + config.Reset)
-	fmt.Println("[1] 🏪 Become a Lender")
+	fmt.Println("[1] 🏪  Become a Lender")
 	fmt.Println("[2] ⬅️  Back")
 	fmt.Println(config.Cyan + "═══════════════════════════════════════" + config.Reset)
 }
@@ -79,7 +79,7 @@ func PrintLenderOrderMenu() {
 func PrintLenderBuyerRequestMenu() {
 	fmt.Println(config.Green + "\n📋 BUYER REQUESTS MANAGEMENT" + config.Reset)
 	fmt.Println(config.Cyan + "═══════════════════════════════════════" + config.Reset)
-	fmt.Println("[1] 📄 View All Buyer Requests")
+	fmt.Println("[1] 📄  View All Buyer Requests")
 	fmt.Println("[2] ✏️  Update Buyer Request Status")
 	fmt.Println("[3] ⬅️  Back")
 	fmt.Println(config.Cyan + "═══════════════════════════════════════" + config.Reset)
@@ -87,11 +87,11 @@ func PrintLenderBuyerRequestMenu() {
 
 // PrintLenderFeedbackMenu - Display the lender feedback and returns menu
 func PrintLenderFeedbackMenu() {
-	fmt.Println(config.Green + "\n⭐ FEEDBACK & RETURNS" + config.Reset)
+	fmt.Println(config.Green + "\n⭐ FEEDBACK " + config.Reset)
 	fmt.Println(config.Cyan + "═══════════════════════════════════════" + config.Reset)
-	fmt.Println("[1] 💬 Give Feedback")
-	fmt.Println("[2] 📤 My Given Feedbacks")
-	fmt.Println("[3] 📥 My Received Feedbacks")
+	fmt.Println("[1] 💬  Give Feedback")
+	fmt.Println("[2] 📤  Given Feedbacks")
+	fmt.Println("[3] 📥  Received Feedbacks")
 	fmt.Println("[4] ⬅️  Back")
 	fmt.Println(config.Cyan + "═══════════════════════════════════════" + config.Reset)
 }
@@ -103,7 +103,7 @@ func PrintAdminSystemMenu() {
 	fmt.Println(config.Green + "\n🏗️  SYSTEM MANAGEMENT" + config.Reset)
 	fmt.Println(config.Cyan + "═══════════════════════════════════════" + config.Reset)
 	fmt.Println("[1] 🏘️  Create Society")
-	fmt.Println("[2] 📂 Create Category")
+	fmt.Println("[2] 📂  Create Category")
 	fmt.Println("[3] ⬅️  Back")
 	fmt.Println(config.Cyan + "═══════════════════════════════════════" + config.Reset)
 }

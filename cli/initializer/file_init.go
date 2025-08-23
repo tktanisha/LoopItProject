@@ -10,9 +10,10 @@ import (
 	"loopit/internal/repository/return_request_repo"
 	"loopit/internal/repository/society_repo"
 	"loopit/internal/repository/user_repo"
+	"loopit/pkg/logger"
 )
 
-func InitFileRepos() error {
+func InitFileRepos(logger *logger.Logger) error {
 	var err error
 
 	LenderRepo, err = lender_repo.NewLenderFileRepo("data/lenders.json")
@@ -60,6 +61,6 @@ func InitFileRepos() error {
 		return err
 	}
 
-	initServices()
+	initServices(logger)
 	return nil
 }

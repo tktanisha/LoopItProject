@@ -17,21 +17,25 @@ import (
 func CreateReturnRequest(userCtx *models.UserContext) {
 	orderID := utils.IntConversion(utils.Input("Enter Order ID to return: "))
 
+	log.Info(fmt.Sprintf("CLI: User %d initiates return request for order %d", userCtx.ID, orderID))
 	err := initializer.ReturnRequestService.CreateReturnRequest(userCtx.ID, orderID)
 	if err != nil {
-		fmt.Println(config.Red+"Error creating return request:"+config.Reset, err)
+		log.Error(fmt.Sprintf("CLI: Failed to create return request: %v", err))
+		fmt.Println(fmt.Sprintf("%sError creating return request:%s %v", config.Red, config.Reset, err))
 		return
 	}
 
-	fmt.Println(config.Green + "Return request created successfully!" + config.Reset)
+	log.Info(fmt.Sprintf("CLI: Return request created for order %d by user %d", orderID, userCtx.ID))
+	fmt.Println(fmt.Sprintf("%sReturn request created successfully!%s", config.Green, config.Reset))
 }
 
 // 2. Get all pending Return Requests (for user)
 func GetAllPendingReturnRequests(userCtx *models.UserContext) {
-
+	log.Info(fmt.Sprintf("CLI: Fetching pending return requests for user %d", userCtx.ID))
 	requests, err := initializer.ReturnRequestService.GetPendingReturnRequests(userCtx.ID)
 	if err != nil {
-		fmt.Println(config.Red+"Error fetching pending return requests:"+config.Reset, err)
+		log.Error(fmt.Sprintf("CLI: Failed to get pending return requests: %v", err))
+		fmt.Println(fmt.Sprintf("%serror fetching pending return requests:%s %v", config.Red, config.Reset, err))
 		return
 	}
 
@@ -58,21 +62,24 @@ func UpdateReturnRequestStatus(userCtx *models.UserContext) {
 	statusOptions := []string{return_request_status.Approved.String(), return_request_status.Rejected.String()}
 	_, selectedStatus := utils.SelectFromList("Select new status", statusOptions)
 	if selectedStatus == "" {
-		fmt.Println(config.Red + "Status selection cancelled." + config.Reset)
+		fmt.Println(fmt.Sprintf("%sStatus selection cancelled.%s", config.Red, config.Reset))
 		return
 	}
 
 	newStatus, err := return_request_status.ParseStatus(selectedStatus)
 	if err != nil {
-		fmt.Println(config.Red+"Error parsing status:"+config.Reset, err)
+		fmt.Println(fmt.Sprintf("%sError parsing status:%s %v", config.Red, config.Reset, err))
 		return
 	}
 
+	log.Info(fmt.Sprintf("CLI: User %d attempts to update return request %d to status %s", userCtx.ID, reqID, newStatus.String()))
 	err = initializer.ReturnRequestService.UpdateReturnRequestStatus(userCtx.ID, reqID, newStatus)
 	if err != nil {
-		fmt.Println(config.Red+"Error updating return request status:"+config.Reset, err)
+		log.Error(fmt.Sprintf("CLI: Failed to update return request status: %v", err))
+		fmt.Println(fmt.Sprintf("%sError updating return request status:%s %v", config.Red, config.Reset, err))
 		return
 	}
 
-	fmt.Println(config.Green + "Return request status updated to '" + selectedStatus + "' successfully!" + config.Reset)
+	log.Info(fmt.Sprintf("CLI: Return request %d updated to '%s' by user %d", reqID, selectedStatus, userCtx.ID))
+	fmt.Println(fmt.Sprintf("%sReturn request status updated to '%s' successfully!%s", config.Green, selectedStatus, config.Reset))
 }

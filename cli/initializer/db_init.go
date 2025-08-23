@@ -11,19 +11,20 @@ import (
 	"loopit/internal/repository/return_request_repo"
 	"loopit/internal/repository/society_repo"
 	"loopit/internal/repository/user_repo"
+	"loopit/pkg/logger"
 )
 
-func InitDBRepos() error {
-	LenderRepo = lender_repo.NewLenderDBRepo(db.DB)
-	UserRepo = user_repo.NewUserDBRepo(db.DB, LenderRepo)
-	CategoryRepo = category_repo.NewCategoryDBRepo(db.DB)
-	ProductRepo = product_repo.NewProductDBRepo(db.DB, CategoryRepo, UserRepo)
-	BuyerRequestRepo = buyer_request_repo.NewBuyerRequestDBRepo(db.DB)
-	OrderRepo = order_repo.NewOrderDBRepo(db.DB, ProductRepo)
-	ReturnRequestRepo = return_request_repo.NewReturnRequestDBRepo(db.DB)
-	FeedBackRepo = feedback_repo.NewFeedBackDBRepo(db.DB)
-	SocietyRepo = society_repo.NewSocietyDBRepo(db.DB)
+func InitDBRepos(logger *logger.Logger) error {
+	LenderRepo = lender_repo.NewLenderDBRepo(db.DB, logger)
+	UserRepo = user_repo.NewUserDBRepo(db.DB, LenderRepo, logger)
+	CategoryRepo = category_repo.NewCategoryDBRepo(db.DB, logger)
+	ProductRepo = product_repo.NewProductDBRepo(db.DB, CategoryRepo, UserRepo, logger)
+	BuyerRequestRepo = buyer_request_repo.NewBuyerRequestDBRepo(db.DB, logger)
+	OrderRepo = order_repo.NewOrderDBRepo(db.DB, ProductRepo, logger)
+	ReturnRequestRepo = return_request_repo.NewReturnRequestDBRepo(db.DB, logger)
+	FeedBackRepo = feedback_repo.NewFeedBackDBRepo(db.DB, logger)
+	SocietyRepo = society_repo.NewSocietyDBRepo(db.DB, logger)
 
-	initServices()
+	initServices(logger)
 	return nil
 }
