@@ -2,7 +2,8 @@ package middleware
 
 import (
 	"log"
-	"loopit/pkg/utils"
+	"loopit/internal/utils"
+
 	"net/http"
 )
 

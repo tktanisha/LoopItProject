@@ -61,7 +61,7 @@ func (a *AuthService) Login(email, password string) (string, *models.User, error
 		return "", nil, errors.New("invalid credentials")
 	}
 
-	token, err := utils.GenerateJWT(user.ID)
+	token, err := utils.GenerateJWT(user.ID, user.Role.String())
 	if err != nil {
 		a.log.Error(fmt.Sprintf("JWT generation failed for user ID: %d, error: %v", user.ID, err))
 		return "", nil, err

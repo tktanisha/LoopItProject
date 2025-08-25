@@ -3,5 +3,5 @@ package router
 import "net/http"
 
 type Router interface {
-	Handle(pattern string, handler http.Handler)
+	HandleFunc(pattern string, handler func(http.ResponseWriter, *http.Request))
 }

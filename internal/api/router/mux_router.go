@@ -10,6 +10,6 @@ func NewMuxRouter(mux *http.ServeMux) *MuxRouter {
 	return &MuxRouter{mux: mux}
 }
 
-func (r *MuxRouter) Handle(pattern string, handler http.Handler) {
-	r.mux.Handle(pattern, handler) // registers route
+func (r *MuxRouter) HandleFunc(pattern string, handler func(http.ResponseWriter, *http.Request)) {
+	r.mux.HandleFunc(pattern, handler)
 }

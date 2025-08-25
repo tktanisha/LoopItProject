@@ -1,8 +1,11 @@
 package handlers
 
 import (
+	"encoding/json"
 	"fmt"
 	"loopit/internal/api/router"
+	"loopit/internal/enums"
+	"loopit/internal/models"
 	"loopit/internal/services/user_service"
 	"loopit/pkg/logger"
 	"net/http"
@@ -22,14 +25,41 @@ func NewUserHandler(userService user_service.UserServiceInterface, log *logger.L
 
 // all handler will register their routes
 func (h *UserHandler) RegisterRoutes(r router.Router) {
-	r.Handle("/users", http.HandlerFunc(h.GetAllUsers)) //
-	r.Handle("/users/create", http.HandlerFunc(h.CreateUser))
+	r.HandleFunc("PATCH /users/{id}", h.BecomeLender)
 }
 
-func (h *UserHandler) GetAllUsers(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(w, "Get all users")
-}
+// BecomeLender controller implementation
+func (h *UserHandler) BecomeLender(w http.ResponseWriter, r *http.Request) {
+	idStr := r.PathValue("id")
+	h.log.Debug(fmt.Sprintf("PATCH /users/%s called", idStr))
+	userCtxVal := r.Context().Value("userCtx") // replace with constants.UserCtxKey if available
+	if userCtxVal == nil {
+		http.Error(w, "unauthorized: user context missing", http.StatusUnauthorized)
+		return
+	}
+	userCtx, ok := userCtxVal.(*models.UserContext)
+	if !ok {
+		http.Error(w, "internal error: invalid user context", http.StatusInternalServerError)
+		return
+	}
 
-func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(w, "Create user")
+	h.log.Info(fmt.Sprintf("User %d attempting to become a lender", userCtx.ID))
+
+	err := h.userService.BecomeLender(userCtx)
+	if err != nil {
+		h.log.Error("Error promoting user to lender: " + err.Error())
+		w.Header().Set("Content-Type", "application/json")
+		fmt.Fprintf(w, `{"status":false,"message":"become lender failed","error":"%s"}`, err.Error())
+		return
+	}
+
+	userCtx.Role = enums.RoleLender
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"status":  true,
+		"message": "User promoted to lender successfully",
+		"user":    userCtx,
+	})
+
 }

@@ -6,13 +6,12 @@ import (
 )
 
 type ErrorResponse struct {
-	Status     bool   `json:"status"` // false for errors
-	StatusCode int    `json:"status_code"`
+	Status     bool   `json:"status"`      // false for errors
+	StatusCode int    `json:"status_code"` // HTTP status code
 	Error      string `json:"error"`
 	Details    string `json:"details,omitempty"`
 }
 
-// WriteErrorResponse writes a JSON error response to the http.ResponseWriter.
 func WriteErrorResponse(w http.ResponseWriter, statusCode int, errMsg string, details string) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
