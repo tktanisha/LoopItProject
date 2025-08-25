@@ -56,3 +56,16 @@
 2025-08-18 12:34:01 [INFO] Fetching order history for user 6 with role user
 2025-08-18 12:34:02 [INFO] Fetched 0 orders for user 6
 2025-08-18 12:34:02 [INFO] CLI: User 6 found no orders matching filter
+2025-08-24 17:02:25 [INFO] AuthRegister CLI command started
+2025-08-24 17:02:45 [INFO] Register attempt for email: varsh@gmail.com
+2025-08-24 17:02:45 [WARNING] User already exists with email: varsh@gmail.com
+2025-08-24 17:02:45 [WARNING] Registration CLI failed for email: varsh@gmail.com, error: user already exists
+2025-08-24 17:02:54 [INFO] AuthRegister CLI command started
+2025-08-24 17:03:20 [INFO] Register attempt for email: nacy@gmail.com
+2025-08-24 17:03:21 [INFO] User inserted into DB successfully, email=nacy@gmail.com, id=15
+2025-08-24 17:03:21 [INFO] User registered successfully: nacy@gmail.com
+2025-08-24 17:03:21 [INFO] Registration CLI successful for email: nacy@gmail.com
+2025-08-24 17:03:21 [INFO] Login CLI initiated for email: nacy@gmail.com
+2025-08-24 17:03:21 [INFO] Login attempt for email: nacy@gmail.com
+2025-08-24 17:03:22 [INFO] Login successful for email: nacy@gmail.com
+2025-08-24 17:03:22 [INFO] Login CLI successful for email: nacy@gmail.com
