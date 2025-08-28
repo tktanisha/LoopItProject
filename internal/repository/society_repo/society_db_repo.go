@@ -10,10 +10,10 @@ import (
 
 type SocietyDBRepo struct {
 	db  *sql.DB
-	log *logger.Logger
+	log logger.LoggerInterface
 }
 
-func NewSocietyDBRepo(db *sql.DB, log *logger.Logger) *SocietyDBRepo {
+func NewSocietyDBRepo(db *sql.DB, log logger.LoggerInterface) *SocietyDBRepo {
 	return &SocietyDBRepo{db: db, log: log}
 }
 

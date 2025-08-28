@@ -14,10 +14,10 @@ import (
 
 type ReturnRequestDBRepo struct {
 	db  *sql.DB
-	log *logger.Logger
+	log logger.LoggerInterface
 }
 
-func NewReturnRequestDBRepo(db *sql.DB, log *logger.Logger) *ReturnRequestDBRepo {
+func NewReturnRequestDBRepo(db *sql.DB, log logger.LoggerInterface) *ReturnRequestDBRepo {
 	return &ReturnRequestDBRepo{db: db, log: log}
 }
 

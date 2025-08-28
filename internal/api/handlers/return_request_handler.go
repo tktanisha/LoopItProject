@@ -16,17 +16,17 @@ import (
 
 type ReturnRequestHandler struct {
 	returnRequestService return_request_service.ReturnRequestServiceInterface
-	log                  *logger.Logger
+	log                  logger.LoggerInterface
 }
 
-func NewReturnRequestHandler(svc return_request_service.ReturnRequestServiceInterface, log *logger.Logger) *ReturnRequestHandler {
+func NewReturnRequestHandler(svc return_request_service.ReturnRequestServiceInterface, log logger.LoggerInterface) *ReturnRequestHandler {
 	return &ReturnRequestHandler{returnRequestService: svc, log: log}
 }
 
 func (h *ReturnRequestHandler) RegisterRoutes(r router.Router) {
 	r.HandleFunc("POST /return-requests", h.CreateReturnRequest)
 	r.HandleFunc("GET /return-requests", h.GetPendingReturnRequests)
-	r.HandleFunc("PATCH /return-requests/{requestId}/status", h.UpdateReturnRequestStatus)
+	r.HandleFunc("PATCH /return-requests/{requestId}/update", h.UpdateReturnRequestStatus)
 }
 
 func (h *ReturnRequestHandler) GetPendingReturnRequests(w http.ResponseWriter, r *http.Request) {
@@ -56,7 +56,7 @@ func (h *ReturnRequestHandler) CreateReturnRequest(w http.ResponseWriter, r *htt
 	}
 
 	var payload struct {
-		OrderID int `json:"orderId"`
+		OrderID int `json:"order_id"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
 		utils.WriteErrorResponse(w, http.StatusBadRequest, "invalid request payload", err.Error())
@@ -96,7 +96,6 @@ func (h *ReturnRequestHandler) UpdateReturnRequestStatus(w http.ResponseWriter, 
 		return
 	}
 
-	// convert string → enum
 	newStatus, err := return_request_status.ParseStatus(payload.Status)
 	if err != nil {
 		utils.WriteErrorResponse(w, http.StatusBadRequest, "invalid status value", err.Error())

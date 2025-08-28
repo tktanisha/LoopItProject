@@ -10,10 +10,10 @@ import (
 
 type SocietyService struct {
 	societyRepo society_repo.SocietyRepo
-	log         *logger.Logger
+	log         logger.LoggerInterface
 }
 
-func NewSocietyService(repo society_repo.SocietyRepo, log *logger.Logger) SocietyServiceInterface {
+func NewSocietyService(repo society_repo.SocietyRepo, log logger.LoggerInterface) SocietyServiceInterface {
 	return &SocietyService{
 		societyRepo: repo,
 		log:         log,

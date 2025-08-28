@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"loopit/internal/api/router"
+	"loopit/internal/constants"
 	"loopit/internal/models"
 	"loopit/internal/services/society_service"
 	"loopit/pkg/logger"
@@ -11,10 +12,10 @@ import (
 
 type SocietyHandler struct {
 	societyService society_service.SocietyServiceInterface
-	log            *logger.Logger
+	log            logger.LoggerInterface
 }
 
-func NewSocietyHandler(societyService society_service.SocietyServiceInterface, log *logger.Logger) *SocietyHandler {
+func NewSocietyHandler(societyService society_service.SocietyServiceInterface, log logger.LoggerInterface) *SocietyHandler {
 	return &SocietyHandler{societyService: societyService, log: log}
 }
 
@@ -28,7 +29,6 @@ func (h *SocietyHandler) GetAllSocieties(w http.ResponseWriter, r *http.Request)
 	societies, err := h.societyService.GetAllSocieties()
 	if err != nil {
 		h.log.Error("Failed to fetch societies: " + err.Error())
-		// utils.WriteErrorResponse(w, http.StatusInternalServerError, "failed to fetch societies", err.Error())
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(map[string]interface{}{
@@ -48,7 +48,7 @@ func (h *SocietyHandler) GetAllSocieties(w http.ResponseWriter, r *http.Request)
 }
 
 func (h *SocietyHandler) CreateSociety(w http.ResponseWriter, r *http.Request) {
-	userCtxVal := r.Context().Value("userCtx") // replace with constants.UserCtxKey if available
+	userCtxVal := r.Context().Value(constants.UserCtxKey)
 	if userCtxVal == nil {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusUnauthorized)
@@ -87,6 +87,7 @@ func (h *SocietyHandler) CreateSociety(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	//TODO:  Check if user is admin
 	err := h.societyService.CreateSociety(payload.Name, payload.Location, payload.Pincode)
 	if err != nil {
 		h.log.Error("Failed to create society: " + err.Error())

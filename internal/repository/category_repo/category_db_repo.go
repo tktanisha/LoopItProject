@@ -10,10 +10,10 @@ import (
 
 type CategoryDBRepo struct {
 	db  *sql.DB
-	log *logger.Logger
+	log logger.LoggerInterface
 }
 
-func NewCategoryDBRepo(db *sql.DB, log *logger.Logger) *CategoryDBRepo {
+func NewCategoryDBRepo(db *sql.DB, log logger.LoggerInterface) *CategoryDBRepo {
 	return &CategoryDBRepo{db: db, log: log}
 }
 

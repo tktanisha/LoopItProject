@@ -1,4 +1,12 @@
--- ----- USER -----
+-- ----- SOCIETY -----
+CREATE TABLE IF NOT EXISTS societies (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    location VARCHAR(255),
+    pincode VARCHAR(20)
+);
+
+------- USER -----
 CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
     full_name VARCHAR(100) NOT NULL,
@@ -8,16 +16,11 @@ CREATE TABLE IF NOT EXISTS users (
     password_hash VARCHAR(255) NOT NULL,
     society_id INT NOT NULL,
     role VARCHAR(20) NOT NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT NOW()
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    FOREIGN KEY (society_id) REFERENCES societies(id) ON DELETE CASCADE
 );
 
--- ----- SOCIETY -----
-CREATE TABLE IF NOT EXISTS societies (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
-    location VARCHAR(255),
-    pincode VARCHAR(20)
-);
+
 
 -- ----- LENDER -----
 CREATE TABLE IF NOT EXISTS lenders (
@@ -44,8 +47,8 @@ CREATE TABLE IF NOT EXISTS products (
     duration INT NOT NULL,
     is_available BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    FOREIGN KEY (lender_id) REFERENCES lenders(id),
-    FOREIGN KEY (category_id) REFERENCES categories(id)
+    FOREIGN KEY (lender_id) REFERENCES lenders(id) ON DELETE CASCADE,
+    FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE
 );
 
 -- ----- PRODUCT IMAGE -----
@@ -54,7 +57,7 @@ CREATE TABLE IF NOT EXISTS product_images (
     product_id INT NOT NULL,
     image_url TEXT NOT NULL,
     uploaded_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    FOREIGN KEY (product_id) REFERENCES products(id)
+    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
 );
 
 -- ----- FEEDBACK -----
@@ -65,8 +68,8 @@ CREATE TABLE IF NOT EXISTS feedbacks (
     text TEXT,
     rating INT CHECK(rating >= 0 AND rating <= 5),
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    FOREIGN KEY (given_by) REFERENCES users(id),
-    FOREIGN KEY (given_to) REFERENCES users(id)
+    FOREIGN KEY (given_by) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (given_to) REFERENCES users(id) ON DELETE CASCADE
 );
 
 -- ----- ORDER -----
@@ -80,8 +83,8 @@ CREATE TABLE IF NOT EXISTS orders (
     security_amount NUMERIC(12,2) NOT NULL,
     status VARCHAR(20) NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    FOREIGN KEY (product_id) REFERENCES products(id),
-    FOREIGN KEY (user_id) REFERENCES users(id)
+    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 -- ----- BUYING REQUEST -----
@@ -91,8 +94,8 @@ CREATE TABLE IF NOT EXISTS buying_requests (
     requested_by INT NOT NULL,
     status VARCHAR(20) NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    FOREIGN KEY (product_id) REFERENCES products(id),
-    FOREIGN KEY (requested_by) REFERENCES users(id)
+    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+    FOREIGN KEY (requested_by) REFERENCES users(id) ON DELETE CASCADE
 );
 
 -- ----- RETURN REQUEST -----
@@ -101,5 +104,5 @@ CREATE TABLE IF NOT EXISTS return_requests (
     order_id INT NOT NULL,
     status VARCHAR(20) NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    FOREIGN KEY (order_id) REFERENCES orders(id)
+    FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE
 );

@@ -15,10 +15,10 @@ type ProductDBRepo struct {
 	db           *sql.DB
 	categoryRepo category_repo.CategoryRepo
 	userRepo     user_repo.UserRepo
-	log          *logger.Logger
+	log          logger.LoggerInterface
 }
 
-func NewProductDBRepo(db *sql.DB, categoryRepo category_repo.CategoryRepo, userRepo user_repo.UserRepo, log *logger.Logger) *ProductDBRepo {
+func NewProductDBRepo(db *sql.DB, categoryRepo category_repo.CategoryRepo, userRepo user_repo.UserRepo, log logger.LoggerInterface) *ProductDBRepo {
 	return &ProductDBRepo{
 		db:           db,
 		categoryRepo: categoryRepo,

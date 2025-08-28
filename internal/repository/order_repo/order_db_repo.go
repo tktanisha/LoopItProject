@@ -16,10 +16,10 @@ import (
 type OrderDBRepo struct {
 	db          *sql.DB
 	productRepo product_repo.ProductRepo
-	log         *logger.Logger
+	log         logger.LoggerInterface
 }
 
-func NewOrderDBRepo(db *sql.DB, productRepo product_repo.ProductRepo, log *logger.Logger) *OrderDBRepo {
+func NewOrderDBRepo(db *sql.DB, productRepo product_repo.ProductRepo, log logger.LoggerInterface) *OrderDBRepo {
 	return &OrderDBRepo{
 		db:          db,
 		productRepo: productRepo,

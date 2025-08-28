@@ -10,10 +10,10 @@ import (
 
 type LenderDBRepo struct {
 	db  *sql.DB
-	log *logger.Logger
+	log logger.LoggerInterface
 }
 
-func NewLenderDBRepo(db *sql.DB, log *logger.Logger) *LenderDBRepo {
+func NewLenderDBRepo(db *sql.DB, log logger.LoggerInterface) *LenderDBRepo {
 	return &LenderDBRepo{db: db, log: log}
 }
 

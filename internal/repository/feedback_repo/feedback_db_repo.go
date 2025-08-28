@@ -10,10 +10,10 @@ import (
 
 type FeedBackDBRepo struct {
 	db  *sql.DB
-	log *logger.Logger
+	log logger.LoggerInterface
 }
 
-func NewFeedBackDBRepo(db *sql.DB, log *logger.Logger) *FeedBackDBRepo {
+func NewFeedBackDBRepo(db *sql.DB, log logger.LoggerInterface) *FeedBackDBRepo {
 	return &FeedBackDBRepo{db: db, log: log}
 }
 

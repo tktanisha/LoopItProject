@@ -14,7 +14,7 @@ import (
 	"loopit/pkg/logger"
 )
 
-func InitDBRepos(logger *logger.Logger) error {
+func InitDBRepos(logger logger.LoggerInterface) error {
 	LenderRepo = lender_repo.NewLenderDBRepo(db.DB, logger)
 	UserRepo = user_repo.NewUserDBRepo(db.DB, LenderRepo, logger)
 	CategoryRepo = category_repo.NewCategoryDBRepo(db.DB, logger)

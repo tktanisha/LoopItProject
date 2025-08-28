@@ -7,15 +7,16 @@ import (
 	"loopit/internal/services/auth_service"
 	"loopit/internal/utils"
 	"loopit/pkg/logger"
+
 	"net/http"
 )
 
 type AuthHandler struct {
 	authService auth_service.AuthServiceInterface
-	log         *logger.Logger
+	log         logger.LoggerInterface
 }
 
-func NewAuthHandler(authService auth_service.AuthServiceInterface, log *logger.Logger) *AuthHandler {
+func NewAuthHandler(authService auth_service.AuthServiceInterface, log logger.LoggerInterface) *AuthHandler {
 	return &AuthHandler{
 		authService: authService,
 		log:         log,

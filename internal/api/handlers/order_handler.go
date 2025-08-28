@@ -17,16 +17,16 @@ import (
 
 type OrderHandler struct {
 	orderService order_service.OrderServiceInterface
-	log          *logger.Logger
+	log          logger.LoggerInterface
 }
 
-func NewOrderHandler(orderService order_service.OrderServiceInterface, log *logger.Logger) *OrderHandler {
+func NewOrderHandler(orderService order_service.OrderServiceInterface, log logger.LoggerInterface) *OrderHandler {
 	return &OrderHandler{orderService: orderService, log: log}
 }
 
 func (h *OrderHandler) RegisterRoutes(r router.Router) {
 	r.HandleFunc("GET /orders/history", h.GetOrderHistory)
-	r.HandleFunc("PATCH /orders/{orderId}/updateStatus", h.UpdateOrderStatus)
+	r.HandleFunc("PATCH /orders/{orderId}/return", h.MarkOrderAsReturned)
 	r.HandleFunc("GET /orders/approved-awaiting", h.GetAllApprovedAwaitingOrders)
 	r.HandleFunc("GET /orders/lender", h.GetLenderOrders)
 }
@@ -64,7 +64,7 @@ func (h *OrderHandler) GetOrderHistory(w http.ResponseWriter, r *http.Request) {
 }
 
 // PATCH /orders/{orderId}/updateStatus
-func (h *OrderHandler) UpdateOrderStatus(w http.ResponseWriter, r *http.Request) {
+func (h *OrderHandler) MarkOrderAsReturned(w http.ResponseWriter, r *http.Request) {
 	userCtx, ok := r.Context().Value(constants.UserCtxKey).(*models.UserContext)
 	if !ok || userCtx == nil {
 		utils.WriteErrorResponse(w, http.StatusUnauthorized, "unauthorized", "user context missing")
@@ -78,21 +78,7 @@ func (h *OrderHandler) UpdateOrderStatus(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	var payload struct {
-		Status string `json:"status"`
-	}
-	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
-		utils.WriteErrorResponse(w, http.StatusBadRequest, "invalid payload", err.Error())
-		return
-	}
-
-	st, err := order_status.ParseStatus(payload.Status)
-	if err != nil {
-		utils.WriteErrorResponse(w, http.StatusBadRequest, "invalid status", err.Error())
-		return
-	}
-
-	if err := initializer.OrderService.UpdateOrderStatus(orderID, st); err != nil {
+	if err := initializer.OrderService.MarkOrderAsReturned(orderID, userCtx); err != nil {
 		h.log.Error("Failed to update order status: " + err.Error())
 		utils.WriteErrorResponse(w, http.StatusBadRequest, "failed to update order status", err.Error())
 		return

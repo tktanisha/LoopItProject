@@ -14,10 +14,10 @@ import (
 
 type BuyerRequestDBRepo struct {
 	db  *sql.DB
-	log *logger.Logger
+	log logger.LoggerInterface
 }
 
-func NewBuyerRequestDBRepo(db *sql.DB, log *logger.Logger) *BuyerRequestDBRepo {
+func NewBuyerRequestDBRepo(db *sql.DB, log logger.LoggerInterface) *BuyerRequestDBRepo {
 	return &BuyerRequestDBRepo{db: db, log: log}
 }
 

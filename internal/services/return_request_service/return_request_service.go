@@ -17,14 +17,14 @@ type returnRequestService struct {
 	orderRepo         order_repo.OrderRepo
 	productRepo       product_repo.ProductRepo
 	returnRequestRepo return_request_repo.ReturnRequestRepo
-	log               *logger.Logger
+	log               logger.LoggerInterface
 }
 
 func NewReturnRequestService(
 	orderRepo order_repo.OrderRepo,
 	productRepo product_repo.ProductRepo,
 	rrRepo return_request_repo.ReturnRequestRepo,
-	log *logger.Logger,
+	log logger.LoggerInterface,
 ) ReturnRequestServiceInterface {
 	return &returnRequestService{
 		orderRepo:         orderRepo,

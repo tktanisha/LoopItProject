@@ -1,0 +1,97 @@
+2025-08-25 19:28:05 [INFO] Server running on :8080
+2025-08-25 20:00:44 [FATAL] Error initializing tables: failed to execute SQL file: pq: relation "societies" does not exist
+2025-08-25 20:02:32 [INFO] Server running on :8080
+2025-08-25 20:03:49 [INFO] Server running on :8080
+2025-08-25 20:19:43 [INFO] Server running on :8080
+2025-08-25 20:19:49 [INFO] Register attempt for email: lender@gmail.com
+2025-08-25 20:19:50 [ERROR] DB insert failed in Create for email=lender@gmail.com, error: pq: insert or update on table "users" violates foreign key constraint "users_society_id_fkey"
+2025-08-25 20:21:48 [INFO] Server running on :8080
+2025-08-25 20:21:55 [INFO] Register attempt for email: lender@gmail.com
+2025-08-25 20:21:56 [INFO] User inserted into DB successfully, email=lender@gmail.com, id=2
+2025-08-25 20:21:56 [INFO] User registered successfully: lender@gmail.com
+2025-08-25 20:21:56 [INFO] Login attempt for email: lender@gmail.com
+2025-08-25 20:21:57 [INFO] Login successful for email: lender@gmail.com
+2025-08-25 20:26:59 [INFO] Login attempt for email: lender@gmail.com
+2025-08-25 20:27:00 [INFO] Login successful for email: lender@gmail.com
+2025-08-25 20:32:22 [DEBUG] PATCH /users/become-lender called
+2025-08-25 20:34:53 [INFO] Server running on :8080
+2025-08-25 20:35:00 [INFO] User 2 attempting to become a lender
+2025-08-25 20:35:03 [INFO] User promoted to lender successfully, userID=2
+2025-08-25 20:35:03 [INFO] User successfully became a lender
+2025-08-25 20:49:02 [INFO] Login attempt for email: lender@gmail.com
+2025-08-25 20:49:05 [INFO] Login successful for email: lender@gmail.com
+2025-08-25 20:49:48 [INFO] Register attempt for email: user@gmail.com
+2025-08-25 20:49:49 [INFO] User inserted into DB successfully, email=user@gmail.com, id=3
+2025-08-25 20:49:49 [INFO] User registered successfully: user@gmail.com
+2025-08-25 20:49:49 [INFO] Login attempt for email: user@gmail.com
+2025-08-25 20:49:50 [INFO] Login successful for email: user@gmail.com
+2025-08-25 20:55:11 [INFO] Server running on :8080
+2025-08-25 20:57:25 [INFO] Register attempt for email: admin@gmail.com
+2025-08-25 20:57:26 [INFO] User inserted into DB successfully, email=admin@gmail.com, id=4
+2025-08-25 20:57:26 [INFO] User registered successfully: admin@gmail.com
+2025-08-25 20:57:26 [INFO] Login attempt for email: admin@gmail.com
+2025-08-25 20:57:26 [INFO] Login successful for email: admin@gmail.com
+2025-08-25 21:03:23 [INFO] Service: Creating category 'electronics' with price 15.00 and security 100.00
+2025-08-25 21:03:24 [INFO] Service: Category created successfully: 'electronics'
+2025-08-25 21:03:47 [INFO] Creating product by user ID 2
+2025-08-25 21:03:48 [INFO] Product created successfully with ID 1 by user 2
+2025-08-25 21:04:45 [INFO] Server running on :8080
+2025-08-25 21:05:52 [INFO] Fetching all products
+2025-08-25 21:05:55 [INFO] Fetched 1 products successfully
+2025-08-25 21:06:31 [INFO] Fetching product by ID: 1
+2025-08-25 21:06:32 [INFO] Fetched product successfully: ID 1
+2025-08-25 21:08:46 [INFO] CreateBuyerRequest called by user 3 for product 1
+2025-08-25 21:08:48 [INFO] Buyer request created successfully for user 3, product 1
+2025-08-25 21:11:27 [INFO] Fetching buyer requests for product 1 with status Pending
+2025-08-25 21:11:28 [INFO] Found 1 buyer requests for product 1 with status Pending
+2025-08-25 21:22:24 [INFO] Server running on :8080
+2025-08-25 21:22:28 [INFO] UpdateBuyerRequestStatus called by user 2 for request 2 to status Approved
+2025-08-25 21:22:28 [WARNING] Buyer request 2 not found
+2025-08-25 21:22:28 [ERROR] Failed to update buyer request status: buyer request not found
+2025-08-25 21:23:06 [INFO] UpdateBuyerRequestStatus called by user 2 for request 1 to status Approved
+2025-08-25 21:23:09 [INFO] Buyer request 1 approved and order created
+2025-08-25 21:24:06 [INFO] Fetching order history for user 3 with role user
+2025-08-25 21:24:06 [INFO] Fetched 1 orders for user 3
+2025-08-25 21:25:38 [INFO] Fetching lender orders for user 2
+2025-08-25 21:25:38 [INFO] Fetched 1 lender orders for user 2
+2025-08-25 21:27:07 [INFO] User 2 attempting to create return request for order 0
+2025-08-25 21:27:07 [WARNING] DB: No order found with id 0
+2025-08-25 21:27:07 [ERROR] Failed to fetch order 0: order not found
+2025-08-25 21:27:43 [INFO] Server running on :8080
+2025-08-25 21:27:50 [INFO] User 2 attempting to create return request for order 1
+2025-08-25 21:27:53 [INFO] Return request created successfully for order 1 by user 2
+2025-08-25 21:37:36 [INFO] Fetching order history for user 3 with role user
+2025-08-25 21:37:39 [INFO] Fetched 1 orders for user 3
+2025-08-25 21:38:33 [INFO] Fetching pending return requests for user 3
+2025-08-25 21:38:34 [INFO] User 3 has 1 pending return requests
+2025-08-25 21:39:26 [INFO] Server running on :8080
+2025-08-25 21:40:47 [INFO] User 3 attempting to update return request 1 to status Approved
+2025-08-25 21:40:49 [INFO] Return request 1 updated to status Approved by user 3
+2025-08-25 21:42:21 [INFO] Fetching approved awaiting orders for lender 2
+2025-08-25 21:42:22 [INFO] Fetched 1 approved awaiting orders for lender 2
+2025-08-25 21:48:46 [INFO] Server running on :8080
+2025-08-25 21:51:32 [INFO] Server running on :8080
+2025-08-25 21:51:43 [INFO] User 2 attempting to mark order 1 as returned
+2025-08-25 21:51:47 [INFO] Order 1 successfully marked as returned by lender 2
+2025-08-25 21:55:59 [INFO] Fetching all feedbacks given by user 3
+2025-08-25 21:55:59 [INFO] User 3 has given 0 feedback(s)
+2025-08-25 21:56:34 [INFO] User 3 attempting to give feedback for order 1
+2025-08-25 21:56:36 [INFO] Feedback successfully given by user 3 to user 2 for order 1
+2025-08-25 21:57:49 [INFO] Fetching all feedbacks received by user 2
+2025-08-25 21:57:49 [INFO] User 2 has received 1 feedback(s)
+2025-08-25 21:58:35 [INFO] Fetching all feedbacks given by user 3
+2025-08-25 21:58:35 [INFO] User 3 has given 1 feedback(s)
+2025-08-25 21:59:23 [INFO] Service: Fetching all categories
+2025-08-25 21:59:23 [INFO] Service: Successfully fetched 1 categories
+2025-08-25 22:03:15 [INFO] Server running on :8080
+2025-08-25 22:03:55 [INFO] Service: Creating new society (name=logix)
+2025-08-25 22:03:55 [ERROR] Repo: Failed to insert society (name=logix): pq: duplicate key value violates unique constraint "societies_pkey"
+2025-08-25 22:03:55 [ERROR] Service: Failed to create society (name=logix): pq: duplicate key value violates unique constraint "societies_pkey"
+2025-08-25 22:03:55 [ERROR] Failed to create society: pq: duplicate key value violates unique constraint "societies_pkey"
+2025-08-25 22:04:09 [INFO] Service: Creating new society (name=logix)
+2025-08-25 22:04:09 [INFO] Repo: Society inserted successfully (id=2, name=logix)
+2025-08-25 22:04:09 [INFO] Service: Society created successfully (name=logix)
+2025-08-25 22:06:02 [INFO] Service: Fetching all societies
+2025-08-25 22:06:03 [INFO] Repo: Retrieved 2 societies
+2025-08-25 22:06:03 [INFO] Service: Successfully fetched 2 societies
+2025-08-26 10:01:31 [INFO] Register attempt for email: admin123@gmail.com

@@ -14,10 +14,10 @@ import (
 type ProductService struct {
 	productRepo product_repo.ProductRepo
 	userRepo    user_repo.UserRepo
-	log         *logger.Logger
+	log         logger.LoggerInterface
 }
 
-func NewProductService(repo product_repo.ProductRepo, userRepo user_repo.UserRepo, log *logger.Logger) ProductServiceInterface {
+func NewProductService(repo product_repo.ProductRepo, userRepo user_repo.UserRepo, log logger.LoggerInterface) ProductServiceInterface {
 	return &ProductService{productRepo: repo, userRepo: userRepo, log: log}
 }
 
@@ -70,6 +70,7 @@ func (p *ProductService) CreateProduct(product *models.Product, userCtx *models.
 
 	product.LenderID = userCtx.ID
 	product.CreatedAt = time.Now()
+	product.IsAvailable = true
 
 	err := p.productRepo.Create(product)
 	if err != nil {

@@ -18,7 +18,7 @@ import (
 func main() {
 
 	fmt.Println("Starting server...")
-	log := logger.GetLogger()
+	var log logger.LoggerInterface = logger.GetLogger()
 	defer log.Close()
 
 	err := godotenv.Load()
@@ -36,10 +36,12 @@ func main() {
 		return
 	}
 
-	initializer.InitServices()
+	// err = db.ExecuteSQLFile(db.DB, "internal/db/init_db_table.sql")
+	// if err != nil {
+	// 	log.Fatal(fmt.Sprintf("Error initializing tables: %v", err))
+	// }
 
-	mux := http.NewServeMux()
-	r := router.NewMuxRouter(mux)
+	initializer.InitServices()
 
 	// create handlers
 	userHandler := handlers.NewUserHandler(initializer.UserService, log)
@@ -52,14 +54,17 @@ func main() {
 	feedbackHandler := handlers.NewFeedbackHandler(initializer.FeedBackService, log)
 	orderHandler := handlers.NewOrderHandler(initializer.OrderService, log)
 
-	// register all
-	api.SetupRoutes(r, userHandler, societyHandler, returnRequestHandler, productHandler, categoryHandler, authHandler, buyerRequestHandler, feedbackHandler, orderHandler)
-
+	publicMux := http.NewServeMux()
+	publicRouter := router.NewMuxRouter(publicMux)
 	protectedMux := http.NewServeMux()
-	protectedMux.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
-		mux.ServeHTTP(w, req)
-	})
-	finalHandler := middleware.AuthMiddleware(log, protectedMux)
+	protectedRouter := router.NewMuxRouter(protectedMux)
+
+	api.SetupRoutes(publicRouter, authHandler)
+	api.SetupRoutes(protectedRouter, userHandler, societyHandler, returnRequestHandler, productHandler, categoryHandler, buyerRequestHandler, feedbackHandler, orderHandler)
+
+	finalHandler := http.NewServeMux()
+	finalHandler.Handle("/auth/", publicMux)
+	finalHandler.Handle("/", middleware.AuthMiddleware(log, protectedMux))
 
 	log.Info("Server running on :8080")
 	fmt.Println("Server running on :8080")

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"loopit/internal/api/router"
+	"loopit/internal/constants"
 	"loopit/internal/enums"
 	"loopit/internal/models"
 	"loopit/internal/services/user_service"
@@ -13,10 +14,10 @@ import (
 
 type UserHandler struct {
 	userService user_service.UserServiceInterface
-	log         *logger.Logger
+	log         logger.LoggerInterface
 }
 
-func NewUserHandler(userService user_service.UserServiceInterface, log *logger.Logger) *UserHandler {
+func NewUserHandler(userService user_service.UserServiceInterface, log logger.LoggerInterface) *UserHandler {
 	return &UserHandler{
 		userService: userService,
 		log:         log,
@@ -25,14 +26,12 @@ func NewUserHandler(userService user_service.UserServiceInterface, log *logger.L
 
 // all handler will register their routes
 func (h *UserHandler) RegisterRoutes(r router.Router) {
-	r.HandleFunc("PATCH /users/{id}", h.BecomeLender)
+	r.HandleFunc("PATCH /users/become-lender", h.BecomeLender)
 }
 
 // BecomeLender controller implementation
 func (h *UserHandler) BecomeLender(w http.ResponseWriter, r *http.Request) {
-	idStr := r.PathValue("id")
-	h.log.Debug(fmt.Sprintf("PATCH /users/%s called", idStr))
-	userCtxVal := r.Context().Value("userCtx") // replace with constants.UserCtxKey if available
+	userCtxVal := r.Context().Value(constants.UserCtxKey) // replace with constants.UserCtxKey if available
 	if userCtxVal == nil {
 		http.Error(w, "unauthorized: user context missing", http.StatusUnauthorized)
 		return

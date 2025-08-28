@@ -9,10 +9,10 @@ import (
 
 type CategoryService struct {
 	categoryRepo category_repo.CategoryRepo
-	log          *logger.Logger
+	log          logger.LoggerInterface
 }
 
-func NewCategoryService(repo category_repo.CategoryRepo, log *logger.Logger) CategoryServiceInterface {
+func NewCategoryService(repo category_repo.CategoryRepo, log logger.LoggerInterface) CategoryServiceInterface {
 	return &CategoryService{
 		categoryRepo: repo,
 		log:          log,

@@ -16,14 +16,14 @@ type FeedbackService struct {
 	feedback_repo feedback_repo.FeedbackRepository
 	product_repo  product_repo.ProductRepo
 	order_repo    order_repo.OrderRepo
-	log           *logger.Logger
+	log           logger.LoggerInterface
 }
 
 func NewFeedbackService(
 	repo feedback_repo.FeedbackRepository,
 	productRepo product_repo.ProductRepo,
 	orderRepo order_repo.OrderRepo,
-	log *logger.Logger,
+	log logger.LoggerInterface,
 ) FeedbackServiceInterface {
 	return &FeedbackService{
 		feedback_repo: repo,

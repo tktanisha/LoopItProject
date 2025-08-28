@@ -20,7 +20,7 @@ type BuyerRequestService struct {
 	productRepo      product_repo.ProductRepo
 	orderRepo        order_repo.OrderRepo
 	categoryRepo     category_repo.CategoryRepo
-	log              *logger.Logger
+	log              logger.LoggerInterface
 }
 
 func NewBuyerRequestService(
@@ -28,7 +28,7 @@ func NewBuyerRequestService(
 	productRepo product_repo.ProductRepo,
 	orderRepo order_repo.OrderRepo,
 	categoryRepo category_repo.CategoryRepo,
-	log *logger.Logger,
+	log logger.LoggerInterface,
 ) BuyerRequestServiceInterface {
 	return &BuyerRequestService{
 		buyerRequestRepo: buyerReqRepo,

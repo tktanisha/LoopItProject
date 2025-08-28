@@ -14,10 +14,10 @@ import (
 type UserDBRepo struct {
 	db         *sql.DB
 	lenderRepo lender_repo.LenderRepo
-	log        *logger.Logger
+	log        logger.LoggerInterface
 }
 
-func NewUserDBRepo(db *sql.DB, lenderRepo lender_repo.LenderRepo, log *logger.Logger) *UserDBRepo {
+func NewUserDBRepo(db *sql.DB, lenderRepo lender_repo.LenderRepo, log logger.LoggerInterface) *UserDBRepo {
 	return &UserDBRepo{db: db, lenderRepo: lenderRepo, log: log}
 }
 

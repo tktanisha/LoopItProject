@@ -13,7 +13,7 @@ import (
 	"loopit/pkg/logger"
 )
 
-func InitFileRepos(logger *logger.Logger) error {
+func InitFileRepos(logger logger.LoggerInterface) error {
 	var err error
 
 	LenderRepo, err = lender_repo.NewLenderFileRepo("data/lenders.json")

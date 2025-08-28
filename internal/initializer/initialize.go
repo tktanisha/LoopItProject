@@ -48,9 +48,10 @@ var (
 )
 
 func InitServices() error {
-	logger := logger.GetLogger()
+	loggerInstance := logger.GetLogger()
+	var log logger.LoggerInterface = loggerInstance
 	if config.AppConfig.StorageType == "db" {
-		return InitDBRepos(logger)
+		return InitDBRepos(log)
 	}
-	return InitFileRepos(logger)
+	return InitFileRepos(log)
 }
