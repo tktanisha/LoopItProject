@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"loopit/internal/db"
 	"loopit/internal/enums/return_request_status"
 	"loopit/internal/models"
 	"loopit/pkg/logger"
@@ -13,11 +14,11 @@ import (
 )
 
 type ReturnRequestDBRepo struct {
-	db  *sql.DB
-	log *logger.Logger
+	db  db.DatabaseInterface
+	log logger.LoggerInterface
 }
 
-func NewReturnRequestDBRepo(db *sql.DB, log *logger.Logger) *ReturnRequestDBRepo {
+func NewReturnRequestDBRepo(db db.DatabaseInterface, log logger.LoggerInterface) *ReturnRequestDBRepo {
 	return &ReturnRequestDBRepo{db: db, log: log}
 }
 

@@ -11,10 +11,10 @@ import (
 
 type UserService struct {
 	userRepo user_repo.UserRepo
-	log      *logger.Logger
+	log      logger.LoggerInterface
 }
 
-func NewUserService(repo user_repo.UserRepo, log *logger.Logger) UserServiceInterface {
+func NewUserService(repo user_repo.UserRepo, log logger.LoggerInterface) UserServiceInterface {
 	return &UserService{userRepo: repo, log: log}
 }
 

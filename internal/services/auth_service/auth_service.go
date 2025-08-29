@@ -13,10 +13,10 @@ import (
 
 type AuthService struct {
 	userRepo user_repo.UserRepo
-	log      *logger.Logger
+	log      logger.LoggerInterface
 }
 
-func NewAuthService(repo user_repo.UserRepo, log *logger.Logger) AuthServiceInterface {
+func NewAuthService(repo user_repo.UserRepo, log logger.LoggerInterface) AuthServiceInterface {
 	return &AuthService{
 		userRepo: repo,
 		log:      log,
@@ -41,6 +41,7 @@ func (a *AuthService) Register(user *models.User) error {
 	user.CreatedAt = time.Now()
 	user.PasswordHash = hash
 	user.Role = enums.RoleUser
+	user.SocietyID = 1
 
 	a.userRepo.Create(user)
 	a.log.Info(fmt.Sprintf("User registered successfully: %s", user.Email))

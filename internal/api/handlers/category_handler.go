@@ -12,11 +12,11 @@ import (
 )
 
 type CategoryHandler struct {
-	log     *logger.Logger
+	log     logger.LoggerInterface
 	service category_service.CategoryServiceInterface
 }
 
-func NewCategoryHandler(service category_service.CategoryServiceInterface, log *logger.Logger) *CategoryHandler {
+func NewCategoryHandler(service category_service.CategoryServiceInterface, log logger.LoggerInterface) *CategoryHandler {
 	return &CategoryHandler{
 		log:     log,
 		service: service,

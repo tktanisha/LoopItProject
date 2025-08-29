@@ -16,14 +16,14 @@ type FeedbackService struct {
 	feedback_repo feedback_repo.FeedbackRepository
 	product_repo  product_repo.ProductRepo
 	order_repo    order_repo.OrderRepo
-	log           *logger.Logger
+	log           logger.LoggerInterface
 }
 
 func NewFeedbackService(
 	repo feedback_repo.FeedbackRepository,
 	productRepo product_repo.ProductRepo,
 	orderRepo order_repo.OrderRepo,
-	log *logger.Logger,
+	log logger.LoggerInterface,
 ) FeedbackServiceInterface {
 	return &FeedbackService{
 		feedback_repo: repo,
@@ -42,6 +42,7 @@ func (s *FeedbackService) GiveFeedback(orderID int, feedbackText string, rating 
 		return err
 	}
 
+	fmt.Println("Order status:", order.Status) // Debugging line
 	if order.Status != order_status.Returned {
 		s.log.Warning(fmt.Sprintf("Feedback rejected for order %d: order not returned (status: %s)", orderID, order.Status))
 		return errors.New("feedback can only be given for returned orders")

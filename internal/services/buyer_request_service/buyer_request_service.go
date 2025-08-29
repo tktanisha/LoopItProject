@@ -20,7 +20,7 @@ type BuyerRequestService struct {
 	productRepo      product_repo.ProductRepo
 	orderRepo        order_repo.OrderRepo
 	categoryRepo     category_repo.CategoryRepo
-	log              *logger.Logger
+	log              logger.LoggerInterface
 }
 
 func NewBuyerRequestService(
@@ -28,7 +28,7 @@ func NewBuyerRequestService(
 	productRepo product_repo.ProductRepo,
 	orderRepo order_repo.OrderRepo,
 	categoryRepo category_repo.CategoryRepo,
-	log *logger.Logger,
+	log logger.LoggerInterface,
 ) BuyerRequestServiceInterface {
 	return &BuyerRequestService{
 		buyerRequestRepo: buyerReqRepo,
@@ -41,7 +41,6 @@ func NewBuyerRequestService(
 
 func (s *BuyerRequestService) CreateBuyerRequest(productID int, userCtx *models.UserContext) error {
 	s.log.Info(fmt.Sprintf("CreateBuyerRequest called by user %d for product %d", userCtx.ID, productID))
-
 	product, err := s.productRepo.FindByID(productID)
 	if err != nil {
 		s.log.Warning(fmt.Sprintf("Product %d not found", productID))

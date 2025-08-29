@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"loopit/internal/db"
 	"loopit/internal/enums/order_status"
 	"loopit/internal/models"
 	"loopit/internal/repository/product_repo"
@@ -14,12 +15,12 @@ import (
 )
 
 type OrderDBRepo struct {
-	db          *sql.DB
+	db          db.DatabaseInterface
 	productRepo product_repo.ProductRepo
-	log         *logger.Logger
+	log         logger.LoggerInterface
 }
 
-func NewOrderDBRepo(db *sql.DB, productRepo product_repo.ProductRepo, log *logger.Logger) *OrderDBRepo {
+func NewOrderDBRepo(db db.DatabaseInterface, productRepo product_repo.ProductRepo, log logger.LoggerInterface) *OrderDBRepo {
 	return &OrderDBRepo{
 		db:          db,
 		productRepo: productRepo,

@@ -16,17 +16,17 @@ import (
 
 type ProductHandler struct {
 	productService product_service.ProductServiceInterface
-	log            *logger.Logger
+	log            logger.LoggerInterface
 }
 
-func NewProductHandler(svc product_service.ProductServiceInterface, log *logger.Logger) *ProductHandler {
+func NewProductHandler(svc product_service.ProductServiceInterface, log logger.LoggerInterface) *ProductHandler {
 	return &ProductHandler{productService: svc, log: log}
 }
 
 func (h *ProductHandler) RegisterRoutes(r router.Router) {
 	r.HandleFunc("GET /products", h.GetAllProducts)
 	r.HandleFunc("GET /products/{id}", h.GetProductByID)
-	r.HandleFunc("POST /products", h.CreateProduct) // protected route (lender only)
+	r.HandleFunc("POST /products/create", h.CreateProduct) // protected route (lender only)
 }
 
 // GetAllProducts returns all products

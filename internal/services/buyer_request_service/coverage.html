@@ -1,0 +1,285 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>buyer_request_service: Go Coverage Report</title>
+		<style>
+			body {
+				background: black;
+				color: rgb(80, 80, 80);
+			}
+			body, pre, #legend span {
+				font-family: Menlo, monospace;
+				font-weight: bold;
+			}
+			#topbar {
+				background: black;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				height: 42px;
+				border-bottom: 1px solid rgb(80, 80, 80);
+			}
+			#content {
+				margin-top: 50px;
+			}
+			#nav, #legend {
+				float: left;
+				margin-left: 10px;
+			}
+			#legend {
+				margin-top: 12px;
+			}
+			#nav {
+				margin-top: 10px;
+			}
+			#legend span {
+				margin: 0 5px;
+			}
+			.cov0 { color: rgb(192, 0, 0) }
+.cov1 { color: rgb(128, 128, 128) }
+.cov2 { color: rgb(116, 140, 131) }
+.cov3 { color: rgb(104, 152, 134) }
+.cov4 { color: rgb(92, 164, 137) }
+.cov5 { color: rgb(80, 176, 140) }
+.cov6 { color: rgb(68, 188, 143) }
+.cov7 { color: rgb(56, 200, 146) }
+.cov8 { color: rgb(44, 212, 149) }
+.cov9 { color: rgb(32, 224, 152) }
+.cov10 { color: rgb(20, 236, 155) }
+
+		</style>
+	</head>
+	<body>
+		<div id="topbar">
+			<div id="nav">
+				<select id="files">
+				
+				<option value="file0">loopit/internal/services/buyer_request_service/buyer_request_service.go (97.5%)</option>
+				
+				</select>
+			</div>
+			<div id="legend">
+				<span>not tracked</span>
+			
+				<span class="cov0">not covered</span>
+				<span class="cov8">covered</span>
+			
+			</div>
+		</div>
+		<div id="content">
+		
+		<pre class="file" id="file0" style="display: none">package buyer_request_service
+
+import (
+        "errors"
+        "fmt"
+        "loopit/internal/enums"
+        br_status "loopit/internal/enums/buyer_request_status"
+        order_status "loopit/internal/enums/order_status"
+        "loopit/internal/models"
+        "loopit/internal/repository/buyer_request_repo"
+        "loopit/internal/repository/category_repo"
+        "loopit/internal/repository/order_repo"
+        "loopit/internal/repository/product_repo"
+        "loopit/pkg/logger"
+        "time"
+)
+
+type BuyerRequestService struct {
+        buyerRequestRepo buyer_request_repo.BuyerRequestRepo
+        productRepo      product_repo.ProductRepo
+        orderRepo        order_repo.OrderRepo
+        categoryRepo     category_repo.CategoryRepo
+        log              logger.LoggerInterface
+}
+
+func NewBuyerRequestService(
+        buyerReqRepo buyer_request_repo.BuyerRequestRepo,
+        productRepo product_repo.ProductRepo,
+        orderRepo order_repo.OrderRepo,
+        categoryRepo category_repo.CategoryRepo,
+        log logger.LoggerInterface,
+) BuyerRequestServiceInterface <span class="cov8" title="1">{
+        return &amp;BuyerRequestService{
+                buyerRequestRepo: buyerReqRepo,
+                productRepo:      productRepo,
+                orderRepo:        orderRepo,
+                categoryRepo:     categoryRepo,
+                log:              log,
+        }
+}</span>
+
+func (s *BuyerRequestService) CreateBuyerRequest(productID int, userCtx *models.UserContext) error <span class="cov8" title="1">{
+        s.log.Info(fmt.Sprintf("CreateBuyerRequest called by user %d for product %d", userCtx.ID, productID))
+        product, err := s.productRepo.FindByID(productID)
+        if err != nil </span><span class="cov8" title="1">{
+                s.log.Warning(fmt.Sprintf("Product %d not found", productID))
+                return errors.New("product not found")
+        }</span>
+        <span class="cov8" title="1">if !product.Product.IsAvailable </span><span class="cov8" title="1">{
+                s.log.Warning(fmt.Sprintf("Product %d is not available", productID))
+                return errors.New("product not available")
+        }</span>
+
+        <span class="cov8" title="1">if product.Product.LenderID == userCtx.ID </span><span class="cov8" title="1">{
+                s.log.Warning(fmt.Sprintf("User %d attempted to request their own product %d", userCtx.ID, productID))
+                return errors.New("lender cannot create a buying request for their own product")
+        }</span>
+
+        <span class="cov8" title="1">allRequests, err := s.buyerRequestRepo.GetAllBuyerRequests([]string{br_status.Pending.String(), br_status.Approved.String()})
+        if err != nil </span><span class="cov8" title="1">{
+                s.log.Error(fmt.Sprintf("Failed to fetch existing requests for user %d, error: %v", userCtx.ID, err))
+                return err
+        }</span>
+        <span class="cov8" title="1">for _, req := range allRequests </span><span class="cov8" title="1">{
+                if req.ProductID == productID &amp;&amp; req.RequestedBy == userCtx.ID </span><span class="cov8" title="1">{
+                        s.log.Warning(fmt.Sprintf("Duplicate buyer request found for user %d on product %d", userCtx.ID, productID))
+                        return errors.New("a pending or approved request already exists")
+                }</span>
+        }
+
+        <span class="cov8" title="1">newRequest := models.BuyingRequest{
+                ProductID:   productID,
+                RequestedBy: userCtx.ID,
+                Status:      br_status.Pending,
+                CreatedAt:   time.Now(),
+        }
+
+        if err := s.buyerRequestRepo.CreateBuyerRequest(newRequest); err != nil </span><span class="cov8" title="1">{
+                s.log.Error(fmt.Sprintf("Failed to create buyer request for user %d, product %d, error: %v", userCtx.ID, productID, err))
+                return err
+        }</span>
+
+        <span class="cov8" title="1">s.log.Info(fmt.Sprintf("Buyer request created successfully for user %d, product %d", userCtx.ID, productID))
+        return nil</span>
+}
+
+func (s *BuyerRequestService) UpdateBuyerRequestStatus(requestID int, updatedStatus br_status.Status, userCtx *models.UserContext) error <span class="cov8" title="1">{
+        s.log.Info(fmt.Sprintf("UpdateBuyerRequestStatus called by user %d for request %d to status %s", userCtx.ID, requestID, updatedStatus.String()))
+
+        if userCtx.Role != enums.RoleLender </span><span class="cov8" title="1">{
+                s.log.Warning(fmt.Sprintf("Unauthorized status update attempt by user %d", userCtx.ID))
+                return errors.New("unauthorized: only lenders can update request status")
+        }</span>
+
+        <span class="cov8" title="1">if updatedStatus != br_status.Approved &amp;&amp; updatedStatus != br_status.Rejected </span><span class="cov8" title="1">{
+                s.log.Warning(fmt.Sprintf("Invalid status %s attempted for request %d", updatedStatus.String(), requestID))
+                return errors.New("invalid status: only 'approved' or 'rejected' allowed")
+        }</span>
+
+        <span class="cov8" title="1">allRequests, err := s.buyerRequestRepo.GetAllBuyerRequests(nil)
+        if err != nil </span><span class="cov0" title="0">{
+                s.log.Error(fmt.Sprintf("Failed to fetch requests for status update by user %d, error: %v", userCtx.ID, err))
+                return err
+        }</span>
+
+        <span class="cov8" title="1">var req *models.BuyingRequest
+        for i := range allRequests </span><span class="cov8" title="1">{
+                if allRequests[i].ID == requestID </span><span class="cov8" title="1">{
+                        req = &amp;allRequests[i]
+                        break</span>
+                }
+        }
+        <span class="cov8" title="1">if req == nil </span><span class="cov8" title="1">{
+                s.log.Warning(fmt.Sprintf("Buyer request %d not found", requestID))
+                return errors.New("buyer request not found")
+        }</span>
+
+        <span class="cov8" title="1">if updatedStatus == br_status.Rejected </span><span class="cov8" title="1">{
+                if err := s.buyerRequestRepo.UpdateStatusBuyerRequest(requestID, br_status.Rejected.String()); err != nil </span><span class="cov8" title="1">{
+                        s.log.Error(fmt.Sprintf("Failed to reject buyer request %d, error: %v", requestID, err))
+                        return err
+                }</span>
+                <span class="cov8" title="1">s.log.Info(fmt.Sprintf("Buyer request %d rejected", requestID))
+                return nil</span>
+        }
+
+        <span class="cov8" title="1">product, err := s.productRepo.FindByID(req.ProductID)
+        if err != nil </span><span class="cov8" title="1">{
+                s.log.Error(fmt.Sprintf("Product %d not found while approving request %d", req.ProductID, requestID))
+                return errors.New("product not found")
+        }</span>
+
+        <span class="cov8" title="1">category, err := s.categoryRepo.FindByID(product.Category.ID)
+        if err != nil </span><span class="cov8" title="1">{
+                s.log.Error(fmt.Sprintf("Category %d not found for product %d, request %d", product.Category.ID, req.ProductID, requestID))
+                return errors.New("category not found")
+        }</span>
+
+        <span class="cov8" title="1">newOrder := models.Order{
+                ProductID:      req.ProductID,
+                UserID:         req.RequestedBy,
+                StartDate:      time.Now(),
+                EndDate:        time.Time{},
+                TotalAmount:    category.Price,
+                SecurityAmount: category.Security,
+                Status:         order_status.InUse,
+                CreatedAt:      time.Now(),
+        }
+
+        if err := s.orderRepo.CreateOrder(newOrder); err != nil </span><span class="cov8" title="1">{
+                s.log.Error(fmt.Sprintf("Failed to create order for request %d, error: %v", requestID, err))
+                return err
+        }</span>
+
+        <span class="cov8" title="1">if err := s.buyerRequestRepo.UpdateStatusBuyerRequest(requestID, br_status.Approved.String()); err != nil </span><span class="cov8" title="1">{
+                s.log.Error(fmt.Sprintf("Failed to update buyer request %d to approved, error: %v", requestID, err))
+                return err
+        }</span>
+
+        <span class="cov8" title="1">s.log.Info(fmt.Sprintf("Buyer request %d approved and order created", requestID))
+        return nil</span>
+}
+
+func (s *BuyerRequestService) GetAllBuyerRequestsByStatus(productID int, status br_status.Status) ([]models.BuyingRequest, error) <span class="cov8" title="1">{
+        s.log.Info(fmt.Sprintf("Fetching buyer requests for product %d with status %s", productID, status.String()))
+
+        filtered, err := s.buyerRequestRepo.GetAllBuyerRequests([]string{status.String()})
+        if err != nil </span><span class="cov8" title="1">{
+                s.log.Error(fmt.Sprintf("Failed to fetch buyer requests for product %d, error: %v", productID, err))
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">result := []models.BuyingRequest{}
+        for _, req := range filtered </span><span class="cov8" title="1">{
+                if req.ProductID == productID </span><span class="cov8" title="1">{
+                        result = append(result, req)
+                }</span>
+        }
+
+        <span class="cov8" title="1">s.log.Info(fmt.Sprintf("Found %d buyer requests for product %d with status %s", len(result), productID, status.String()))
+        return result, nil</span>
+}
+</pre>
+		
+		</div>
+	</body>
+	<script>
+	(function() {
+		var files = document.getElementById('files');
+		var visible;
+		files.addEventListener('change', onChange, false);
+		function select(part) {
+			if (visible)
+				visible.style.display = 'none';
+			visible = document.getElementById(part);
+			if (!visible)
+				return;
+			files.value = part;
+			visible.style.display = 'block';
+			location.hash = part;
+		}
+		function onChange() {
+			select(files.value);
+			window.scrollTo(0, 0);
+		}
+		if (location.hash != "") {
+			select(location.hash.substr(1));
+		}
+		if (!visible) {
+			select("file0");
+		}
+	})();
+	</script>
+</html>

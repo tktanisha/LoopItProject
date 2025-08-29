@@ -16,17 +16,17 @@ import (
 
 type BuyerRequestHandler struct {
 	buyerRequestService buyer_request_service.BuyerRequestServiceInterface
-	log                 *logger.Logger
+	log                 logger.LoggerInterface
 }
 
-func NewBuyerRequestHandler(buyerRequestService buyer_request_service.BuyerRequestServiceInterface, log *logger.Logger) *BuyerRequestHandler {
+func NewBuyerRequestHandler(buyerRequestService buyer_request_service.BuyerRequestServiceInterface, log logger.LoggerInterface) *BuyerRequestHandler {
 	return &BuyerRequestHandler{buyerRequestService: buyerRequestService, log: log}
 }
 
 func (h *BuyerRequestHandler) RegisterRoutes(r router.Router) {
 	r.HandleFunc("POST /buyer-requests", h.CreateBuyerRequest)
 	r.HandleFunc("GET /buyer-requests", h.GetAllBuyerRequests)
-	r.HandleFunc("PATCH /buyer-requests/{requestId}/status", h.UpdateBuyerRequestStatus)
+	r.HandleFunc("PATCH /buyer-requests/{requestId}/update", h.UpdateBuyerRequestStatus)
 }
 
 // POST /buyer-requests

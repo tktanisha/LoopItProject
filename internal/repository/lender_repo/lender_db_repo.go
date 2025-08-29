@@ -4,16 +4,17 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"loopit/internal/db"
 	"loopit/internal/models"
 	"loopit/pkg/logger"
 )
 
 type LenderDBRepo struct {
-	db  *sql.DB
-	log *logger.Logger
+	db  db.DatabaseInterface
+	log logger.LoggerInterface
 }
 
-func NewLenderDBRepo(db *sql.DB, log *logger.Logger) *LenderDBRepo {
+func NewLenderDBRepo(db db.DatabaseInterface, log logger.LoggerInterface) *LenderDBRepo {
 	return &LenderDBRepo{db: db, log: log}
 }
 

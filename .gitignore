@@ -1,2 +1,6 @@
 data
-.env    
+.env
+.air.toml
+tmp
+build-errors.log
+logs

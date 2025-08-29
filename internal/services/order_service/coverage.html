@@ -1,0 +1,283 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>order_service: Go Coverage Report</title>
+		<style>
+			body {
+				background: black;
+				color: rgb(80, 80, 80);
+			}
+			body, pre, #legend span {
+				font-family: Menlo, monospace;
+				font-weight: bold;
+			}
+			#topbar {
+				background: black;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				height: 42px;
+				border-bottom: 1px solid rgb(80, 80, 80);
+			}
+			#content {
+				margin-top: 50px;
+			}
+			#nav, #legend {
+				float: left;
+				margin-left: 10px;
+			}
+			#legend {
+				margin-top: 12px;
+			}
+			#nav {
+				margin-top: 10px;
+			}
+			#legend span {
+				margin: 0 5px;
+			}
+			.cov0 { color: rgb(192, 0, 0) }
+.cov1 { color: rgb(128, 128, 128) }
+.cov2 { color: rgb(116, 140, 131) }
+.cov3 { color: rgb(104, 152, 134) }
+.cov4 { color: rgb(92, 164, 137) }
+.cov5 { color: rgb(80, 176, 140) }
+.cov6 { color: rgb(68, 188, 143) }
+.cov7 { color: rgb(56, 200, 146) }
+.cov8 { color: rgb(44, 212, 149) }
+.cov9 { color: rgb(32, 224, 152) }
+.cov10 { color: rgb(20, 236, 155) }
+
+		</style>
+	</head>
+	<body>
+		<div id="topbar">
+			<div id="nav">
+				<select id="files">
+				
+				<option value="file0">loopit/internal/services/order_service/order_service.go (89.1%)</option>
+				
+				</select>
+			</div>
+			<div id="legend">
+				<span>not tracked</span>
+			
+				<span class="cov0">not covered</span>
+				<span class="cov8">covered</span>
+			
+			</div>
+		</div>
+		<div id="content">
+		
+		<pre class="file" id="file0" style="display: none">package order_service
+
+import (
+        "errors"
+        "fmt"
+        "loopit/internal/enums"
+        "loopit/internal/enums/order_status"
+        "loopit/internal/enums/return_request_status"
+        "loopit/internal/models"
+        "loopit/internal/repository/order_repo"
+        "loopit/internal/repository/product_repo"
+        "loopit/internal/repository/return_request_repo"
+        "loopit/pkg/logger"
+)
+
+type OrderService struct {
+        orderRepo         order_repo.OrderRepo
+        returnRequestRepo return_request_repo.ReturnRequestRepo
+        productRepo       product_repo.ProductRepo
+        log               logger.LoggerInterface
+}
+
+func NewOrderService(
+        OrderRepo order_repo.OrderRepo,
+        returnRepo return_request_repo.ReturnRequestRepo,
+        productRepo product_repo.ProductRepo,
+        log logger.LoggerInterface,
+) OrderServiceInterface <span class="cov8" title="1">{
+        return &amp;OrderService{
+                orderRepo:         OrderRepo,
+                returnRequestRepo: returnRepo,
+                productRepo:       productRepo,
+                log:               log,
+        }
+}</span>
+
+// in use(on create order), return-requested(on create return request), returned(on mark as returned)
+func (s *OrderService) UpdateOrderStatus(orderID int, newStatus order_status.Status) error <span class="cov8" title="1">{
+        s.log.Info(fmt.Sprintf("Updating status of order %d to %s", orderID, newStatus))
+        order, err := s.orderRepo.GetOrderByID(orderID)
+        if err != nil </span><span class="cov8" title="1">{
+                s.log.Error(fmt.Sprintf("Failed to fetch order %d, error: %v", orderID, err))
+                return err
+        }</span>
+        <span class="cov8" title="1">if order == nil </span><span class="cov8" title="1">{
+                s.log.Warning(fmt.Sprintf("Order %d not found", orderID))
+                return errors.New("order not found")
+        }</span>
+
+        <span class="cov8" title="1">if newStatus == order_status.Returned &amp;&amp; order.Status != order_status.ReturnRequested </span><span class="cov8" title="1">{
+                s.log.Warning(fmt.Sprintf("Invalid transition: order %d is in %s, cannot mark as returned", orderID, order.Status))
+                return errors.New("order must be in return_requested status to mark as returned")
+        }</span>
+
+        <span class="cov8" title="1">if err := s.orderRepo.UpdateOrderStatus(orderID, newStatus.String()); err != nil </span><span class="cov8" title="1">{
+                s.log.Error(fmt.Sprintf("Failed to update order %d status to %s, error: %v", orderID, newStatus, err))
+                return err
+        }</span>
+
+        <span class="cov8" title="1">s.log.Info(fmt.Sprintf("Successfully updated order %d status to %s", orderID, newStatus))
+        return nil</span>
+}
+
+// GetOrderHistory returns orders for the user based on role
+func (s *OrderService) GetOrderHistory(userCtx *models.UserContext, filterStatus []order_status.Status) ([]*models.Order, error) <span class="cov8" title="1">{
+        s.log.Info(fmt.Sprintf("Fetching order history for user %d with role %s", userCtx.ID, userCtx.Role))
+        filterStatusStr := []string{}
+        for _, status := range filterStatus </span><span class="cov8" title="1">{
+                filterStatusStr = append(filterStatusStr, status.String())
+        }</span>
+
+        <span class="cov8" title="1">orders, err := s.orderRepo.GetOrderHistory(userCtx.ID, filterStatusStr)
+        if err != nil </span><span class="cov8" title="1">{
+                s.log.Error(fmt.Sprintf("Failed to fetch order history for user %d, error: %v", userCtx.ID, err))
+                return nil, err
+        }</span>
+        <span class="cov8" title="1">s.log.Info(fmt.Sprintf("Fetched %d orders for user %d", len(orders), userCtx.ID))
+        return orders, nil</span>
+}
+
+func (s *OrderService) GetLenderOrders(userCtx *models.UserContext) ([]*models.Order, error) <span class="cov0" title="0">{
+        s.log.Info(fmt.Sprintf("Fetching lender orders for user %d", userCtx.ID))
+        if userCtx.Role != enums.RoleLender </span><span class="cov0" title="0">{
+                s.log.Warning(fmt.Sprintf("Unauthorized attempt: user %d with role %s tried to fetch lender orders", userCtx.ID, userCtx.Role))
+                return nil, errors.New("only lender can get orders")
+        }</span>
+
+        <span class="cov0" title="0">orders, err := s.orderRepo.GetLenderOrders(userCtx.ID)
+        if err != nil </span><span class="cov0" title="0">{
+                s.log.Error(fmt.Sprintf("Failed to fetch lender orders for user %d, error: %v", userCtx.ID, err))
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">s.log.Info(fmt.Sprintf("Fetched %d lender orders for user %d", len(orders), userCtx.ID))
+        return orders, nil</span>
+}
+
+// Lender marks order as returned (status: returned)
+func (s *OrderService) MarkOrderAsReturned(orderID int, userCtx *models.UserContext) error <span class="cov8" title="1">{
+        s.log.Info(fmt.Sprintf("User %d attempting to mark order %d as returned", userCtx.ID, orderID))
+        order, err := s.orderRepo.GetOrderByID(orderID)
+        if err != nil </span><span class="cov8" title="1">{
+                s.log.Error(fmt.Sprintf("Failed to fetch order %d, error: %v", orderID, err))
+                return err
+        }</span>
+        <span class="cov8" title="1">if order == nil </span><span class="cov8" title="1">{
+                s.log.Warning(fmt.Sprintf("Order %d not found", orderID))
+                return errors.New("order not found")
+        }</span>
+
+        <span class="cov8" title="1">product, err := s.productRepo.FindByID(order.ProductID)
+        if err != nil </span><span class="cov8" title="1">{
+                s.log.Error(fmt.Sprintf("Failed to fetch product %d for order %d, error: %v", order.ProductID, orderID, err))
+                return errors.New("unable to find product for the order")
+        }</span>
+        <span class="cov8" title="1">if product == nil </span><span class="cov8" title="1">{
+                s.log.Warning(fmt.Sprintf("Product %d for order %d not found", order.ProductID, orderID))
+                return errors.New("product not found")
+        }</span>
+        <span class="cov8" title="1">if product.Product.LenderID != userCtx.ID </span><span class="cov8" title="1">{
+                s.log.Warning(fmt.Sprintf("Unauthorized attempt: user %d tried to mark order %d as returned (not lender)", userCtx.ID, orderID))
+                return errors.New("unauthorized lender")
+        }</span>
+
+        <span class="cov8" title="1">returnRequests, err := s.returnRequestRepo.GetAllReturnRequests([]string{return_request_status.Approved.String()})
+        if err != nil </span><span class="cov8" title="1">{
+                s.log.Error(fmt.Sprintf("Failed to fetch return requests for order %d, error: %v", orderID, err))
+                return errors.New("unable to find return requests for the order")
+        }</span>
+
+        <span class="cov8" title="1">isExists := false
+        for _, rr := range returnRequests </span><span class="cov8" title="1">{
+                if rr.OrderID == orderID </span><span class="cov8" title="1">{
+                        isExists = true
+                        break</span>
+                }
+        }
+        <span class="cov8" title="1">if !isExists </span><span class="cov8" title="1">{
+                s.log.Warning(fmt.Sprintf("No approved return request found for order %d", orderID))
+                return errors.New("order has not been approved for return")
+        }</span>
+
+        <span class="cov8" title="1">if err := s.orderRepo.UpdateOrderStatus(orderID, order_status.Returned.String()); err != nil </span><span class="cov8" title="1">{
+                s.log.Error(fmt.Sprintf("Failed to update order %d status to returned, error: %v", orderID, err))
+                return err
+        }</span>
+        <span class="cov8" title="1">s.log.Info(fmt.Sprintf("Order %d successfully marked as returned by lender %d", orderID, userCtx.ID))
+        return nil</span>
+}
+
+// GetAllApprovedAwaitingOrders returns orders approved for return but not yet marked returned
+func (s *OrderService) GetAllApprovedAwaitingOrders(userCtx *models.UserContext) ([]*models.Order, error) <span class="cov8" title="1">{
+        s.log.Info(fmt.Sprintf("Fetching approved awaiting orders for lender %d", userCtx.ID))
+        if userCtx.Role != enums.RoleLender </span><span class="cov8" title="1">{
+                s.log.Warning(fmt.Sprintf("Unauthorized attempt: user %d with role %s tried to fetch awaiting orders", userCtx.ID, userCtx.Role))
+                return nil, errors.New("only lender can get returned awaiting orders")
+        }</span>
+
+        <span class="cov8" title="1">returnRequests, err := s.returnRequestRepo.GetAllReturnRequests([]string{return_request_status.Approved.String()})
+        if err != nil </span><span class="cov8" title="1">{
+                s.log.Error(fmt.Sprintf("Failed to fetch return requests, error: %v", err))
+                return nil, errors.New("unable to find return requests for the order")
+        }</span>
+
+        <span class="cov8" title="1">orders := []*models.Order{}
+        for _, rr := range returnRequests </span><span class="cov8" title="1">{
+                order, err := s.orderRepo.GetOrderByID(rr.OrderID)
+                if err != nil </span><span class="cov8" title="1">{
+                        s.log.Error(fmt.Sprintf("Failed to fetch order %d for return request, error: %v", rr.OrderID, err))
+                        return nil, errors.New("unable to find order for the return request")
+                }</span>
+                <span class="cov8" title="1">if order == nil </span><span class="cov8" title="1">{
+                        s.log.Warning(fmt.Sprintf("Order %d referenced in return request not found", rr.OrderID))
+                        continue</span>
+                }
+                <span class="cov8" title="1">orders = append(orders, order)</span>
+        }
+
+        <span class="cov8" title="1">s.log.Info(fmt.Sprintf("Fetched %d approved awaiting orders for lender %d", len(orders), userCtx.ID))
+        return orders, nil</span>
+}
+</pre>
+		
+		</div>
+	</body>
+	<script>
+	(function() {
+		var files = document.getElementById('files');
+		var visible;
+		files.addEventListener('change', onChange, false);
+		function select(part) {
+			if (visible)
+				visible.style.display = 'none';
+			visible = document.getElementById(part);
+			if (!visible)
+				return;
+			files.value = part;
+			visible.style.display = 'block';
+			location.hash = part;
+		}
+		function onChange() {
+			select(files.value);
+			window.scrollTo(0, 0);
+		}
+		if (location.hash != "") {
+			select(location.hash.substr(1));
+		}
+		if (!visible) {
+			select("file0");
+		}
+	})();
+	</script>
+</html>

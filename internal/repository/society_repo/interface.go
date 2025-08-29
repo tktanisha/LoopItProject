@@ -1,3 +1,4 @@
+//go:generate mockgen -source=interface.go -destination=../../mock/mock_society_repo.go -package=mock
 package society_repo
 
 import "loopit/internal/models"

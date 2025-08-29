@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"loopit/internal/db"
 	"loopit/internal/enums/buyer_request_status"
 	"loopit/internal/models"
 	"loopit/pkg/logger"
@@ -13,11 +14,11 @@ import (
 )
 
 type BuyerRequestDBRepo struct {
-	db  *sql.DB
-	log *logger.Logger
+	db  db.DatabaseInterface
+	log logger.LoggerInterface
 }
 
-func NewBuyerRequestDBRepo(db *sql.DB, log *logger.Logger) *BuyerRequestDBRepo {
+func NewBuyerRequestDBRepo(db db.DatabaseInterface, log logger.LoggerInterface) *BuyerRequestDBRepo {
 	return &BuyerRequestDBRepo{db: db, log: log}
 }
 

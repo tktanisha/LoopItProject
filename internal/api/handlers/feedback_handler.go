@@ -14,18 +14,18 @@ import (
 
 type FeedbackHandler struct {
 	feedbackService feedback_service.FeedbackServiceInterface
-	log             *logger.Logger
+	log             logger.LoggerInterface
 }
 
-func NewFeedbackHandler(feedbackService feedback_service.FeedbackServiceInterface, log *logger.Logger) *FeedbackHandler {
+func NewFeedbackHandler(feedbackService feedback_service.FeedbackServiceInterface, log logger.LoggerInterface) *FeedbackHandler {
 	return &FeedbackHandler{feedbackService: feedbackService, log: log}
 }
 
 func (h *FeedbackHandler) RegisterRoutes(r router.Router) {
 
-	r.HandleFunc("POST /feedback", h.GiveFeedback)
-	r.HandleFunc("GET /feedback/given", h.GetAllGivenFeedbacks)
-	r.HandleFunc("GET /feedback/received", h.GetAllReceivedFeedbacks)
+	r.HandleFunc("POST /feedbacks", h.GiveFeedback)
+	r.HandleFunc("GET /feedbacks/given", h.GetAllGivenFeedbacks)
+	r.HandleFunc("GET /feedbacks/received", h.GetAllReceivedFeedbacks)
 }
 
 // POST /feedback

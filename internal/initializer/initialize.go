@@ -2,6 +2,7 @@ package initializer
 
 import (
 	"loopit/internal/config"
+	"loopit/internal/db"
 	"loopit/internal/repository/buyer_request_repo"
 	"loopit/internal/repository/category_repo"
 	"loopit/internal/repository/feedback_repo"
@@ -47,10 +48,12 @@ var (
 	SocietyService       society_service.SocietyServiceInterface
 )
 
-func InitServices() error {
-	logger := logger.GetLogger()
+func InitServices(db db.DatabaseInterface) error {
+	loggerInstance := logger.GetLogger()
+	var log logger.LoggerInterface = loggerInstance
 	if config.AppConfig.StorageType == "db" {
-		return InitDBRepos(logger)
+		return InitDBRepos(log, db)
 	}
-	return InitFileRepos(logger)
+	return nil
+	// return InitFileRepos(log)
 }
