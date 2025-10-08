@@ -16,3 +16,8 @@ type Order struct {
 	Status         order_status.Status `json:"status"`
 	CreatedAt      time.Time           `json:"created_at"`
 }
+
+type OrderDto struct {
+	Order   Order           `json:"order"`
+	Product ProductResponse `json:"product"`
+}

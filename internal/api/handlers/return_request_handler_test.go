@@ -131,7 +131,7 @@ func TestCreateReturnRequest(t *testing.T) {
 // -------------------- Test UpdateReturnRequestStatus -------------------
 func TestUpdateReturnRequestStatus(t *testing.T) {
 	log := logger.NewFakeLogger()
-	validBody := `{"status":"APPROVED"}`
+	validBody := `{"status":"Approved"}`
 
 	tests := []struct {
 		name       string

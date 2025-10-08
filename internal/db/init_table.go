@@ -1,12 +1,11 @@
 package db
 
 import (
-	"database/sql"
 	"fmt"
 	"os"
 )
 
-func ExecuteSQLFile(db *sql.DB, filePath string) error {
+func ExecuteSQLFile(db DatabaseInterface, filePath string) error {
 
 	sqlBytes, err := os.ReadFile(filePath)
 	if err != nil {

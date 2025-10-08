@@ -51,11 +51,16 @@ func (a *AuthService) Register(user *models.User) error {
 func (a *AuthService) Login(email, password string) (string, *models.User, error) {
 	a.log.Info(fmt.Sprintf("Login attempt for email: %s", email))
 
+	fmt.Println("email=", email)
+	fmt.Println("password=", password)
+
 	user, err := a.userRepo.FindByEmail(email)
 	if err != nil {
 		a.log.Warning(fmt.Sprintf("Login failed, user not found: %s", email))
 		return "", nil, errors.New("invalid credentials")
 	}
+
+	fmt.Print("after calling user repo for email")
 
 	if !utils.CheckPasswordHash(password, user.PasswordHash) {
 		a.log.Warning(fmt.Sprintf("Invalid password for email: %s", email))

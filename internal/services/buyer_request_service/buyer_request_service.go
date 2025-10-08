@@ -42,6 +42,7 @@ func NewBuyerRequestService(
 func (s *BuyerRequestService) CreateBuyerRequest(productID int, userCtx *models.UserContext) error {
 	s.log.Info(fmt.Sprintf("CreateBuyerRequest called by user %d for product %d", userCtx.ID, productID))
 
+	// Step 1: Validate the product
 	product, err := s.productRepo.FindByID(productID)
 	if err != nil {
 		s.log.Warning(fmt.Sprintf("Product %d not found", productID))
@@ -52,23 +53,32 @@ func (s *BuyerRequestService) CreateBuyerRequest(productID int, userCtx *models.
 		return errors.New("product not available")
 	}
 
+	// Step 2: Prevent lender from requesting their own product
 	if product.Product.LenderID == userCtx.ID {
 		s.log.Warning(fmt.Sprintf("User %d attempted to request their own product %d", userCtx.ID, productID))
 		return errors.New("lender cannot create a buying request for their own product")
 	}
 
-	allRequests, err := s.buyerRequestRepo.GetAllBuyerRequests([]string{br_status.Pending.String(), br_status.Approved.String()})
+	// Step 3: Check for duplicate requests by filtering in the database
+	// Create a pointer to the productID for the repository function
+	prodIDPtr := &productID
+	statuses := []string{br_status.Pending.String(), br_status.Approved.String()}
+
+	// Pass productID and statuses to the repository for efficient filtering
+	existingRequests, err := s.buyerRequestRepo.GetAllBuyerRequests(prodIDPtr, statuses)
 	if err != nil {
 		s.log.Error(fmt.Sprintf("Failed to fetch existing requests for user %d, error: %v", userCtx.ID, err))
 		return err
 	}
-	for _, req := range allRequests {
-		if req.ProductID == productID && req.RequestedBy == userCtx.ID {
+
+	for _, req := range existingRequests {
+		if req.RequestedBy == userCtx.ID {
 			s.log.Warning(fmt.Sprintf("Duplicate buyer request found for user %d on product %d", userCtx.ID, productID))
 			return errors.New("a pending or approved request already exists")
 		}
 	}
 
+	// Step 4: Create the new buyer request
 	newRequest := models.BuyingRequest{
 		ProductID:   productID,
 		RequestedBy: userCtx.ID,
@@ -98,7 +108,7 @@ func (s *BuyerRequestService) UpdateBuyerRequestStatus(requestID int, updatedSta
 		return errors.New("invalid status: only 'approved' or 'rejected' allowed")
 	}
 
-	allRequests, err := s.buyerRequestRepo.GetAllBuyerRequests(nil)
+	allRequests, err := s.buyerRequestRepo.GetAllBuyerRequests(nil, nil)
 	if err != nil {
 		s.log.Error(fmt.Sprintf("Failed to fetch requests for status update by user %d, error: %v", userCtx.ID, err))
 		return err
@@ -162,22 +172,17 @@ func (s *BuyerRequestService) UpdateBuyerRequestStatus(requestID int, updatedSta
 	return nil
 }
 
-func (s *BuyerRequestService) GetAllBuyerRequestsByStatus(productID int, status br_status.Status) ([]models.BuyingRequest, error) {
-	s.log.Info(fmt.Sprintf("Fetching buyer requests for product %d with status %s", productID, status.String()))
+func (s *BuyerRequestService) GetAllBuyerRequests(productID *int, filterStatuses []string) ([]models.BuyingRequest, error) {
+	s.log.Info(fmt.Sprintf("Fetching buyer requests with filters - productID: %v, statuses: %v", productID, filterStatuses))
 
-	filtered, err := s.buyerRequestRepo.GetAllBuyerRequests([]string{status.String()})
+	// Pass filters directly to the repository
+	requests, err := s.buyerRequestRepo.GetAllBuyerRequests(productID, filterStatuses)
 	if err != nil {
-		s.log.Error(fmt.Sprintf("Failed to fetch buyer requests for product %d, error: %v", productID, err))
+		s.log.Error(fmt.Sprintf("Failed to fetch buyer requests, error: %v", err))
 		return nil, err
 	}
 
-	result := []models.BuyingRequest{}
-	for _, req := range filtered {
-		if req.ProductID == productID {
-			result = append(result, req)
-		}
-	}
-
-	s.log.Info(fmt.Sprintf("Found %d buyer requests for product %d with status %s", len(result), productID, status.String()))
-	return result, nil
+	s.log.Info(fmt.Sprintf("Found %d buyer requests from service", len(requests)))
+	fmt.Println("request=", requests)
+	return requests, nil
 }

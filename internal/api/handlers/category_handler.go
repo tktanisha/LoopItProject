@@ -53,6 +53,11 @@ func (h *CategoryHandler) CreateCategory(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	if payload.Price < 0 || payload.Security < 0 {
+		utils.WriteErrorResponse(w, http.StatusBadRequest, "invalid request payload", "price and security must be non-negative")
+		return
+	}
+
 	if err := h.service.CreateCategory(payload.Name, payload.Price, payload.Security); err != nil {
 		h.log.Error("Failed to create category: " + err.Error())
 		utils.WriteErrorResponse(w, http.StatusBadRequest, "failed to create category", err.Error())

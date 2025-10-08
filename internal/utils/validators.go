@@ -2,6 +2,7 @@ package utils
 
 import (
 	"errors"
+	"loopit/internal/models"
 	"regexp"
 	"strings"
 )
@@ -77,6 +78,96 @@ func ValidateAddress(input string) error {
 	}
 	if len(strings.TrimSpace(input)) < 10 {
 		return errors.New("address must be at least 10 characters")
+	}
+	return nil
+}
+
+func ValidateDescription(input string) error {
+	if strings.TrimSpace(input) == "" {
+		return errors.New("description cannot be empty")
+	}
+	return nil
+}
+
+func ValidateOrderID(input int) error {
+	if input <= 0 {
+		return errors.New("order_id must be a positive integer")
+	}
+	return nil
+}
+
+func ValidateFeedbackText(input string) error {
+	if strings.TrimSpace(input) == "" {
+		return errors.New("feedback_text cannot be empty")
+	}
+	return nil
+}
+
+func ValidateRating(input int) error {
+	if input < 1 || input > 5 {
+		return errors.New("rating must be between 1 and 5")
+	}
+	return nil
+}
+
+func ValidateProduct(p *models.Product) error {
+	if p.CategoryID <= 0 {
+		return errors.New("category_id must be a positive integer")
+	}
+	if strings.TrimSpace(p.Name) == "" {
+		return errors.New("name cannot be empty")
+	}
+	if len(p.Name) > 100 {
+		return errors.New("name cannot exceed 100 characters")
+	}
+	if len(p.Description) > 500 {
+		return errors.New("description cannot exceed 500 characters")
+	}
+	if p.Duration <= 0 {
+		return errors.New("duration must be greater than 0")
+	}
+	return nil
+}
+
+// ValidateSociety validates the Society creation request
+func ValidateSociety(name, location, pincode string) error {
+	if strings.TrimSpace(name) == "" {
+		return errors.New("society name cannot be empty")
+	}
+	if len(name) < 3 {
+		return errors.New("society name must be at least 3 characters")
+	}
+	if strings.TrimSpace(location) == "" {
+		return errors.New("location cannot be empty")
+	}
+	if len(location) < 5 {
+		return errors.New("location must be at least 5 characters")
+	}
+	// Inline pincode validation (instead of separate ValidatePincode)
+	if strings.TrimSpace(pincode) == "" {
+		return errors.New("pincode cannot be empty")
+	}
+	regex := `^[0-9]{6}$`
+	matched, _ := regexp.MatchString(regex, pincode)
+	if !matched {
+		return errors.New("pincode must be 6 digits")
+	}
+	return nil
+}
+
+// ValidateCategory validates category creation request
+func ValidateCategory(name string, price, security float64) error {
+	if strings.TrimSpace(name) == "" {
+		return errors.New("category name cannot be empty")
+	}
+	if len(name) < 3 {
+		return errors.New("category name must be at least 3 characters")
+	}
+	if price <= 0 {
+		return errors.New("price must be a positive number")
+	}
+	if security < 0 {
+		return errors.New("security cannot be negative")
 	}
 	return nil
 }

@@ -14,7 +14,7 @@ import (
 	"testing"
 )
 
-// mocks the society service interface
+// FakeSocietyService mocks the society service interface
 type FakeSocietyService struct {
 	GetAllFn    func() ([]models.Society, error)
 	CreateSocFn func(name, location, pincode string) error
@@ -27,6 +27,7 @@ func (f *FakeSocietyService) CreateSociety(name, location, pincode string) error
 	return f.CreateSocFn(name, location, pincode)
 }
 
+// --------------------- Test for GetAllSocieties ---------------------
 func TestGetAllSocieties(t *testing.T) {
 	log := logger.NewFakeLogger()
 
@@ -79,6 +80,7 @@ func TestGetAllSocieties(t *testing.T) {
 	}
 }
 
+// --------------------- Test for CreateSociety ---------------------
 func TestCreateSociety(t *testing.T) {
 	log := logger.NewFakeLogger()
 

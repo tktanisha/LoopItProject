@@ -95,7 +95,7 @@ func (h *ReturnRequestHandler) UpdateReturnRequestStatus(w http.ResponseWriter, 
 		utils.WriteErrorResponse(w, http.StatusBadRequest, "invalid request payload", err.Error())
 		return
 	}
-
+	// convert string → enum
 	newStatus, err := return_request_status.ParseStatus(payload.Status)
 	if err != nil {
 		utils.WriteErrorResponse(w, http.StatusBadRequest, "invalid status value", err.Error())

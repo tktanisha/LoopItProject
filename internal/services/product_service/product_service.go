@@ -37,6 +37,7 @@ func (p *ProductService) GetAllProducts() ([]*models.ProductResponse, error) {
 
 // GetProductByID returns a product by ID
 func (p *ProductService) GetProductByID(id int) (*models.ProductResponse, error) {
+	fmt.Println("	 the product of id=", id)
 	p.log.Info(fmt.Sprintf("Fetching product by ID: %d", id))
 
 	if id <= 0 {
@@ -51,6 +52,7 @@ func (p *ProductService) GetProductByID(id int) (*models.ProductResponse, error)
 	}
 
 	p.log.Info(fmt.Sprintf("Fetched product successfully: ID %d", id))
+	fmt.Println("products in service=", product)
 	return product, nil
 }
 

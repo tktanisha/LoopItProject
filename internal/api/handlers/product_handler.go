@@ -81,6 +81,12 @@ func (h *ProductHandler) CreateProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Validation before processing
+	if err := utils.ValidateProduct(&product); err != nil {
+		utils.WriteErrorResponse(w, http.StatusBadRequest, "invalid request payload", err.Error())
+		return
+	}
+
 	if err := h.productService.CreateProduct(&product, userCtx); err != nil {
 		h.log.Error("Product creation failed: " + err.Error())
 		utils.WriteErrorResponse(w, http.StatusForbidden, "failed to create product", err.Error())

@@ -51,7 +51,8 @@ func TestCreateReturnRequest(t *testing.T) {
 		{
 			name: "fail - order not in use",
 			setup: func() {
-				mockOrderRepo.EXPECT().GetOrderByID(1).Return(&models.Order{ID: 1, Status: order_status.Returned}, nil)
+				mockOrderRepo.EXPECT().GetOrderByID(1).
+					Return(&models.Order{ID: 1, Status: order_status.Returned}, nil)
 			},
 			expectErr: true,
 		},
@@ -63,12 +64,61 @@ func TestCreateReturnRequest(t *testing.T) {
 			expectErr: true,
 		},
 		{
+			name: "fail - product repo error",
+			setup: func() {
+				mockOrderRepo.EXPECT().GetOrderByID(1).Return(&models.Order{
+					ID:        1,
+					ProductID: 10,
+					Status:    order_status.InUse,
+				}, nil)
+				mockProductRepo.EXPECT().FindByID(10).Return(nil, errors.New("product fetch fail"))
+			},
+			expectErr: true,
+		},
+		{
 			name: "fail - user not lender",
 			setup: func() {
-				mockOrderRepo.EXPECT().GetOrderByID(1).Return(&models.Order{ID: 1, ProductID: 10, Status: order_status.InUse}, nil)
+				mockOrderRepo.EXPECT().GetOrderByID(1).Return(&models.Order{
+					ID:        1,
+					ProductID: 10,
+					Status:    order_status.InUse,
+				}, nil)
 				mockProductRepo.EXPECT().FindByID(10).Return(&models.ProductResponse{
 					Product: models.Product{ID: 10, LenderID: 999}, // mismatch
 				}, nil)
+			},
+			expectErr: true,
+		},
+		{
+			name: "fail - update order status error",
+			setup: func() {
+				mockOrderRepo.EXPECT().GetOrderByID(1).Return(&models.Order{
+					ID:        1,
+					ProductID: 10,
+					Status:    order_status.InUse,
+				}, nil)
+				mockProductRepo.EXPECT().FindByID(10).Return(&models.ProductResponse{
+					Product: models.Product{ID: 10, LenderID: 2},
+				}, nil)
+				mockOrderRepo.EXPECT().UpdateOrderStatus(1, order_status.ReturnRequested.String()).
+					Return(errors.New("update fail"))
+			},
+			expectErr: true,
+		},
+		{
+			name: "fail - create return request error",
+			setup: func() {
+				mockOrderRepo.EXPECT().GetOrderByID(1).Return(&models.Order{
+					ID:        1,
+					ProductID: 10,
+					Status:    order_status.InUse,
+				}, nil)
+				mockProductRepo.EXPECT().FindByID(10).Return(&models.ProductResponse{
+					Product: models.Product{ID: 10, LenderID: 2},
+				}, nil)
+				mockOrderRepo.EXPECT().UpdateOrderStatus(1, order_status.ReturnRequested.String()).Return(nil)
+				mockRRRepo.EXPECT().CreateReturnRequest(gomock.Any()).
+					Return(errors.New("create fail"))
 			},
 			expectErr: true,
 		},
@@ -93,7 +143,7 @@ func TestUpdateReturnRequestStatus(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockOrderRepo := mock.NewMockOrderRepo(ctrl)
-	mockProductRepo := mock.NewMockProductRepo(ctrl)
+	mockProductRepo := mock.NewMockProductRepo(ctrl) // Not used here but part of service
 	mockRRRepo := mock.NewMockReturnRequestRepo(ctrl)
 	log := logger.NewFakeLogger()
 
@@ -137,8 +187,42 @@ func TestUpdateReturnRequestStatus(t *testing.T) {
 			name:      "fail - user does not own order",
 			newStatus: return_request_status.Approved,
 			setup: func() {
-				mockRRRepo.EXPECT().GetReturnRequestByID(1).Return(models.ReturnRequest{ID: 1, OrderID: 5, Status: return_request_status.Pending}, nil)
+				mockRRRepo.EXPECT().GetReturnRequestByID(1).Return(models.ReturnRequest{
+					ID: 1, OrderID: 5, Status: return_request_status.Pending,
+				}, nil)
 				mockOrderRepo.EXPECT().GetOrderByID(5).Return(&models.Order{ID: 5, UserID: 99}, nil)
+			},
+			expectErr: true,
+		},
+		{
+			name:      "fail - error fetching return request",
+			newStatus: return_request_status.Approved,
+			setup: func() {
+				mockRRRepo.EXPECT().GetReturnRequestByID(1).Return(models.ReturnRequest{}, errors.New("db error"))
+			},
+			expectErr: true,
+		},
+		{
+			name:      "fail - error fetching order",
+			newStatus: return_request_status.Approved,
+			setup: func() {
+				mockRRRepo.EXPECT().GetReturnRequestByID(1).Return(models.ReturnRequest{
+					ID: 1, OrderID: 5, Status: return_request_status.Pending,
+				}, nil)
+				mockOrderRepo.EXPECT().GetOrderByID(5).Return(nil, errors.New("order not found"))
+			},
+			expectErr: true,
+		},
+		{
+			name:      "fail - error updating return request status",
+			newStatus: return_request_status.Approved,
+			setup: func() {
+				mockRRRepo.EXPECT().GetReturnRequestByID(1).Return(models.ReturnRequest{
+					ID: 1, OrderID: 5, Status: return_request_status.Pending,
+				}, nil)
+				mockOrderRepo.EXPECT().GetOrderByID(5).Return(&models.Order{ID: 5, UserID: 2}, nil)
+				mockRRRepo.EXPECT().UpdateReturnRequestStatus(1, return_request_status.Approved.String()).
+					Return(errors.New("update failed"))
 			},
 			expectErr: true,
 		},
@@ -206,7 +290,7 @@ func TestGetPendingReturnRequests(t *testing.T) {
 				mockOrderRepo.EXPECT().GetOrderByID(7).Return(nil, errors.New("not found"))
 			},
 			expectLen: 0,
-			expectErr: false,
+			expectErr: true,
 		},
 	}
 

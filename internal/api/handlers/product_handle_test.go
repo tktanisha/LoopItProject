@@ -41,6 +41,7 @@ func (f *FakeProductService) CreateProduct(p *models.Product, user *models.UserC
 	return nil
 }
 
+// ----------------- Test GetAllProducts -----------------
 func TestGetAllProducts(t *testing.T) {
 	log := logger.NewFakeLogger()
 
@@ -56,7 +57,7 @@ func TestGetAllProducts(t *testing.T) {
 		{"success",
 			func() ([]*models.ProductResponse, error) {
 				return []*models.ProductResponse{
-					{Product: models.Product{ID: 1, Name: "Item1"}},
+					&models.ProductResponse{Product: models.Product{ID: 1, Name: "Item1"}},
 				}, nil
 			},
 			http.StatusOK, `"status":true`},
@@ -88,24 +89,24 @@ func TestGetProductByID(t *testing.T) {
 	tests := []struct {
 		name       string
 		idParam    string
-		serviceFn  func(id int) (*models.Product, error)
+		serviceFn  func(id int) (*models.ProductResponse, error)
 		wantStatus int
 		wantBody   string
 	}{
 		{"invalid id", "bad", nil, http.StatusBadRequest, "invalid product id"},
 		{"service error", "5",
-			func(id int) (*models.Product, error) { return nil, errors.New("not found") },
+			func(id int) (*models.ProductResponse, error) { return nil, errors.New("not found") },
 			http.StatusNotFound, "product not found"},
 		{"success", "2",
-			func(id int) (*models.Product, error) { return &models.Product{ID: 2, Name: "Pen"}, nil },
+			func(id int) (*models.ProductResponse, error) {
+				return &models.ProductResponse{Product: models.Product{ID: 2, Name: "Pen"}}, nil
+			},
 			http.StatusOK, `"status":true`},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			svc := &FakeProductService{GetOneFn: func(id int) (*models.ProductResponse, error) {
-				return nil, nil
-			}}
+			svc := &FakeProductService{GetOneFn: tt.serviceFn}
 			h := handlers.NewProductHandler(svc, log)
 
 			req := httptest.NewRequest(http.MethodGet, "/products/"+tt.idParam, nil)

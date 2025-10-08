@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"context"
+	"fmt"
 	"loopit/internal/constants"
 	"loopit/internal/enums"
 	"loopit/internal/models"
@@ -16,7 +17,8 @@ func AuthMiddleware(log logger.LoggerInterface, next http.Handler) http.Handler 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		authHeader := r.Header.Get("Authorization")
 		if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
-			http.Error(w, "missing or invalid authorization header", http.StatusUnauthorized)
+			// http.Error(w, "missinzg or invalid authorization header", http.StatusUnauthorized)
+			utils.WriteErrorResponse(w, http.StatusUnauthorized, "missing or invalid authorization header", "authorization header must be in format 'Bearer <token>'")
 			return
 		}
 
@@ -24,7 +26,8 @@ func AuthMiddleware(log logger.LoggerInterface, next http.Handler) http.Handler 
 
 		claims, err := utils.ValidateJWT(token)
 		if err != nil {
-			http.Error(w, "invalid or expired token", http.StatusUnauthorized)
+			// http.Error(w, "invalid or expired token", http.StatusUnauthorized)
+			utils.WriteErrorResponse(w, http.StatusUnauthorized, "invalid or expired token", "token is either invalid or has expired")
 			return
 		}
 
@@ -40,6 +43,7 @@ func AuthMiddleware(log logger.LoggerInterface, next http.Handler) http.Handler 
 		}
 
 		ctx := context.WithValue(r.Context(), constants.UserCtxKey, userCtx)
+		fmt.Println("to move in the handler")
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }

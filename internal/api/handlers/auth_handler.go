@@ -51,6 +51,15 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if err := utils.ValidateEmail(req.Email); err != nil {
+		utils.WriteErrorResponse(w, http.StatusBadRequest, "invalid invalid request payload", err.Error())
+		return
+	}
+	if err := utils.ValidatePassword(req.Password); err != nil {
+		utils.WriteErrorResponse(w, http.StatusBadRequest, "invalid request payload", err.Error())
+		return
+	}
+
 	token, user, err := h.authService.Login(req.Email, req.Password)
 	if err != nil {
 		h.log.Warning("Login failed: " + err.Error())
@@ -75,6 +84,27 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	var req registerRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		utils.WriteErrorResponse(w, http.StatusBadRequest, "invalid request payload", err.Error())
+		return
+	}
+
+	if err := utils.ValidateFullName(req.FullName); err != nil {
+		utils.WriteErrorResponse(w, http.StatusBadRequest, "invalid request payload", err.Error())
+		return
+	}
+	if err := utils.ValidateEmail(req.Email); err != nil {
+		utils.WriteErrorResponse(w, http.StatusBadRequest, "invalid request payload", err.Error())
+		return
+	}
+	if err := utils.ValidatePassword(req.Password); err != nil {
+		utils.WriteErrorResponse(w, http.StatusBadRequest, "invalid request payload", err.Error())
+		return
+	}
+	if err := utils.ValidatePhoneNumber(req.PhoneNumber); err != nil {
+		utils.WriteErrorResponse(w, http.StatusBadRequest, "invalid request payload", err.Error())
+		return
+	}
+	if err := utils.ValidateAddress(req.Address); err != nil {
 		utils.WriteErrorResponse(w, http.StatusBadRequest, "invalid request payload", err.Error())
 		return
 	}

@@ -68,6 +68,7 @@ func (s *OrderService) GetOrderHistory(userCtx *models.UserContext, filterStatus
 	for _, status := range filterStatus {
 		filterStatusStr = append(filterStatusStr, status.String())
 	}
+	fmt.Println("user ctx=", userCtx.ID)
 
 	orders, err := s.orderRepo.GetOrderHistory(userCtx.ID, filterStatusStr)
 	if err != nil {
@@ -75,10 +76,12 @@ func (s *OrderService) GetOrderHistory(userCtx *models.UserContext, filterStatus
 		return nil, err
 	}
 	s.log.Info(fmt.Sprintf("Fetched %d orders for user %d", len(orders), userCtx.ID))
+	fmt.Println("orders==", orders)
 	return orders, nil
 }
 
 func (s *OrderService) GetLenderOrders(userCtx *models.UserContext) ([]*models.Order, error) {
+	fmt.Println("enter in lender service")
 	s.log.Info(fmt.Sprintf("Fetching lender orders for user %d", userCtx.ID))
 	if userCtx.Role != enums.RoleLender {
 		s.log.Warning(fmt.Sprintf("Unauthorized attempt: user %d with role %s tried to fetch lender orders", userCtx.ID, userCtx.Role))
@@ -86,6 +89,7 @@ func (s *OrderService) GetLenderOrders(userCtx *models.UserContext) ([]*models.O
 	}
 
 	orders, err := s.orderRepo.GetLenderOrders(userCtx.ID)
+	fmt.Println("orders in service=", orders)
 	if err != nil {
 		s.log.Error(fmt.Sprintf("Failed to fetch lender orders for user %d, error: %v", userCtx.ID, err))
 		return nil, err
@@ -170,6 +174,9 @@ func (s *OrderService) GetAllApprovedAwaitingOrders(userCtx *models.UserContext)
 		}
 		if order == nil {
 			s.log.Warning(fmt.Sprintf("Order %d referenced in return request not found", rr.OrderID))
+			continue
+		}
+		if order.Status != order_status.ReturnRequested {
 			continue
 		}
 		orders = append(orders, order)

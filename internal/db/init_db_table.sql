@@ -47,7 +47,7 @@ CREATE TABLE IF NOT EXISTS products (
     duration INT NOT NULL,
     is_available BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    FOREIGN KEY (lender_id) REFERENCES lenders(id) ON DELETE CASCADE,
+    FOREIGN KEY (lender_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE
 );
 
@@ -102,7 +102,9 @@ CREATE TABLE IF NOT EXISTS buying_requests (
 CREATE TABLE IF NOT EXISTS return_requests (
     id SERIAL PRIMARY KEY,
     order_id INT NOT NULL,
+    requested_by INT NOT NULL,
     status VARCHAR(20) NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE
+     FOREIGN KEY (requested_by) REFERENCES users(id) ON DELETE CASCADE
 );

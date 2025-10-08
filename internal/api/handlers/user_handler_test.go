@@ -1,4 +1,3 @@
-// file: internal/api/handlers/user_handler_test.go
 package handlers_test
 
 import (
@@ -25,7 +24,7 @@ func (f *FakeService) BecomeLender(u *models.UserContext) error {
 }
 
 func TestBecomeLenderHandler(t *testing.T) {
-	log := logger.NewFakeLogger()
+	var log logger.LoggerInterface = logger.NewFakeLogger()
 
 	tests := []struct {
 		name       string
@@ -54,7 +53,7 @@ func TestBecomeLenderHandler(t *testing.T) {
 			serviceFn: func(u *models.UserContext) error {
 				return errors.New("failed")
 			},
-			wantStatus: http.StatusOK, // handler by default status
+			wantStatus: http.StatusOK,
 			wantBody:   `"status":false`,
 		},
 		{
@@ -87,6 +86,7 @@ func TestBecomeLenderHandler(t *testing.T) {
 				t.Errorf("expected %d, got %d", tt.wantStatus, resp.StatusCode)
 			}
 			body := w.Body.String()
+
 			if !strings.Contains(body, tt.wantBody) {
 				t.Errorf("expected body to contain %q, got %s", tt.wantBody, body)
 			}

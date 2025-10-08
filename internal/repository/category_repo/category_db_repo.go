@@ -4,16 +4,17 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"loopit/internal/db"
 	"loopit/internal/models"
 	"loopit/pkg/logger"
 )
 
 type CategoryDBRepo struct {
-	db  *sql.DB
+	db  db.DatabaseInterface
 	log logger.LoggerInterface
 }
 
-func NewCategoryDBRepo(db *sql.DB, log logger.LoggerInterface) *CategoryDBRepo {
+func NewCategoryDBRepo(db db.DatabaseInterface, log logger.LoggerInterface) *CategoryDBRepo {
 	return &CategoryDBRepo{db: db, log: log}
 }
 

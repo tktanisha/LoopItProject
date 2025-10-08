@@ -2,10 +2,12 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"loopit/internal/api/router"
 	"loopit/internal/constants"
 	"loopit/internal/models"
 	"loopit/internal/services/society_service"
+	"loopit/internal/utils"
 	"loopit/pkg/logger"
 	"net/http"
 )
@@ -79,15 +81,16 @@ func (h *SocietyHandler) CreateSociety(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(map[string]interface{}{
-			"status":  false,
-			"message": "invalid request payload",
-			"error":   err.Error(),
-		})
+		utils.WriteErrorResponse(w, http.StatusBadRequest, "invalid request payload", err.Error())
 		return
 	}
 
-	//TODO:  Check if user is admin
+	if err := utils.ValidateSociety(payload.Name, payload.Location, payload.Pincode); err != nil {
+		h.log.Error(fmt.Sprintf("Service: Invalid society creation request: %v", err))
+		utils.WriteErrorResponse(w, http.StatusBadRequest, "invalid request payload", err.Error())
+		return
+	}
+
 	err := h.societyService.CreateSociety(payload.Name, payload.Location, payload.Pincode)
 	if err != nil {
 		h.log.Error("Failed to create society: " + err.Error())

@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"loopit/internal/db"
 	"loopit/internal/enums"
 	"loopit/internal/models"
 	"loopit/internal/repository/lender_repo"
@@ -11,13 +12,15 @@ import (
 	"time"
 )
 
+//go:generate mockgen -source=interface.go -destination=../../mock/mock_user_repo.go -package=mock
+
 type UserDBRepo struct {
-	db         *sql.DB
+	db         db.DatabaseInterface
 	lenderRepo lender_repo.LenderRepo
 	log        logger.LoggerInterface
 }
 
-func NewUserDBRepo(db *sql.DB, lenderRepo lender_repo.LenderRepo, log logger.LoggerInterface) *UserDBRepo {
+func NewUserDBRepo(db db.DatabaseInterface, lenderRepo lender_repo.LenderRepo, log logger.LoggerInterface) *UserDBRepo {
 	return &UserDBRepo{db: db, lenderRepo: lenderRepo, log: log}
 }
 
@@ -73,6 +76,7 @@ func (r *UserDBRepo) FindByID(userID int) (*models.User, error) {
 
 // FindByEmail returns a user by email
 func (r *UserDBRepo) FindByEmail(email string) (*models.User, error) {
+	fmt.Println("enter in find by remail repo")
 	row := r.db.QueryRow("SELECT id, full_name, email, phone_number, address, password_hash, society_id, role, created_at FROM users WHERE email=$1", email)
 	var u models.User
 	var roleStr string
@@ -110,15 +114,8 @@ func (r *UserDBRepo) Create(user *models.User) {
 
 // BecomeLender updates a user's role to "lender" and creates a lender entry
 func (r *UserDBRepo) BecomeLender(userID int) error {
-	tx, err := r.db.Begin()
+	_, err := r.db.Exec("UPDATE users SET role=$1 WHERE id=$2", enums.RoleLender.String(), userID)
 	if err != nil {
-		r.log.Error(fmt.Sprintf("Transaction begin failed in BecomeLender for userID=%d, error: %v", userID, err))
-		return err
-	}
-
-	_, err = tx.Exec("UPDATE users SET role=$1 WHERE id=$2", enums.RoleLender.String(), userID)
-	if err != nil {
-		tx.Rollback()
 		r.log.Error(fmt.Sprintf("Failed to update user role in BecomeLender for userID=%d, error: %v", userID, err))
 		return err
 	}
@@ -129,13 +126,12 @@ func (r *UserDBRepo) BecomeLender(userID int) error {
 		TotalEarnings: 0.0,
 	})
 	if err != nil {
-		tx.Rollback()
 		r.log.Error(fmt.Sprintf("Failed to create lender in BecomeLender for userID=%d, error: %v", userID, err))
 		return err
 	}
 
 	r.log.Info(fmt.Sprintf("User promoted to lender successfully, userID=%d", userID))
-	return tx.Commit()
+	return nil
 }
 
 // Save is not needed for Postgres as changes are applied immediately

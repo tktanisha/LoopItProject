@@ -13,6 +13,7 @@ import (
 	"os"
 
 	"github.com/joho/godotenv"
+	"github.com/rs/cors"
 )
 
 func main() {
@@ -28,7 +29,7 @@ func main() {
 	}
 
 	DB_URL := os.Getenv("DB_URL")
-	err = db.ConnectDB(DB_URL)
+	pg, err := db.ConnectDB(DB_URL)
 	fmt.Println("Connecting to database...")
 
 	if err != nil {
@@ -36,13 +37,14 @@ func main() {
 		return
 	}
 
-	// err = db.ExecuteSQLFile(db.DB, "internal/db/init_db_table.sql")
+	fmt.Println("hello")
+	// err = db.ExecuteSQLFile(pg, "internal/db/init_db_table.sql")
 	// if err != nil {
 	// 	log.Fatal(fmt.Sprintf("Error initializing tables: %v", err))
 	// }
 
-	initializer.InitServices()
-
+	initializer.InitServices(pg, log)
+	fmt.Println("hi")
 	// create handlers
 	userHandler := handlers.NewUserHandler(initializer.UserService, log)
 	societyHandler := handlers.NewSocietyHandler(initializer.SocietyService, log)
@@ -50,9 +52,9 @@ func main() {
 	productHandler := handlers.NewProductHandler(initializer.ProductService, log)
 	categoryHandler := handlers.NewCategoryHandler(initializer.CategoryService, log)
 	authHandler := handlers.NewAuthHandler(initializer.AuthService, log)
-	buyerRequestHandler := handlers.NewBuyerRequestHandler(initializer.BuyerRequestService, log)
+	buyerRequestHandler := handlers.NewBuyerRequestHandler(initializer.BuyerRequestService, initializer.ProductService, log)
 	feedbackHandler := handlers.NewFeedbackHandler(initializer.FeedBackService, log)
-	orderHandler := handlers.NewOrderHandler(initializer.OrderService, log)
+	orderHandler := handlers.NewOrderHandler(initializer.OrderService, initializer.ProductService, log)
 
 	publicMux := http.NewServeMux()
 	publicRouter := router.NewMuxRouter(publicMux)
@@ -65,8 +67,16 @@ func main() {
 	finalHandler := http.NewServeMux()
 	finalHandler.Handle("/auth/", publicMux)
 	finalHandler.Handle("/", middleware.AuthMiddleware(log, protectedMux))
+	c := cors.New(cors.Options{
+		AllowedOrigins:   []string{"*"},
+		AllowedMethods:   []string{"GET", "POST", "PATCH", "DELETE", "PUT", "OPTIONS"},
+		AllowedHeaders:   []string{"Authorization", "Content-Type"},
+		AllowCredentials: true,
+		Debug:            true,
+	})
+	handler := c.Handler(finalHandler)
 
 	log.Info("Server running on :8080")
 	fmt.Println("Server running on :8080")
-	http.ListenAndServe(":8080", finalHandler)
+	http.ListenAndServe(":8080", handler)
 }

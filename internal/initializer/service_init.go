@@ -13,7 +13,7 @@ import (
 	"loopit/pkg/logger"
 )
 
-func initServices(logger logger.LoggerInterface) {
+func InitServiceFiles(logger logger.LoggerInterface) {
 	AuthService = auth_service.NewAuthService(UserRepo, logger)
 	ProductService = product_service.NewProductService(ProductRepo, UserRepo, logger)
 	CategoryService = category_service.NewCategoryService(CategoryRepo, logger)

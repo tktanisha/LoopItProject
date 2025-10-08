@@ -7,6 +7,12 @@ import (
 	"time"
 )
 
+//go:generate mockgen -source=interface.go -destination=../../internal/mock/mock_logger.go -package=mock
+
+var OpenFile = os.OpenFile
+var OsExit = os.Exit
+var logFileName = "logs/app.log" // default path
+
 type LogLevel int
 
 const (
@@ -34,17 +40,20 @@ type Logger struct {
 var instance *Logger
 var once sync.Once
 
-// GetLogger returns singleton logger
+func SetLogFileName(name string) {
+	logFileName = name
+}
+
 func GetLogger() *Logger {
 	once.Do(func() {
-		file, err := os.OpenFile("logs/app.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		file, err := OpenFile(logFileName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 		if err != nil {
 			panic(err)
 		}
 
 		instance = &Logger{
 			file: file,
-			ch:   make(chan logMessage, 100), // buffered channel for async logging
+			ch:   make(chan logMessage, 100),
 		}
 
 		instance.wg.Add(1)
@@ -100,7 +109,7 @@ func (l *Logger) Error(msg string)   { l.log(ERROR, msg) }
 func (l *Logger) Fatal(msg string) {
 	l.log(FATAL, msg)
 	l.Close()
-	os.Exit(1)
+	OsExit(1)
 }
 
 func (l *Logger) Close() {
@@ -110,4 +119,10 @@ func (l *Logger) Close() {
 		l.wg.Wait()
 		l.file.Close()
 	})
+}
+
+// Add to reset singleton (used in tests)
+func ResetLoggerForTest() {
+	instance = nil
+	once = sync.Once{}
 }

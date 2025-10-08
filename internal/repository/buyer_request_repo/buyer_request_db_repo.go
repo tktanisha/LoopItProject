@@ -4,31 +4,46 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"loopit/internal/db"
 	"loopit/internal/enums/buyer_request_status"
 	"loopit/internal/models"
 	"loopit/pkg/logger"
+	"strings"
 	"time"
 
 	"github.com/lib/pq"
 )
 
 type BuyerRequestDBRepo struct {
-	db  *sql.DB
+	db  db.DatabaseInterface
 	log logger.LoggerInterface
 }
 
-func NewBuyerRequestDBRepo(db *sql.DB, log logger.LoggerInterface) *BuyerRequestDBRepo {
+func NewBuyerRequestDBRepo(db db.DatabaseInterface, log logger.LoggerInterface) *BuyerRequestDBRepo {
 	return &BuyerRequestDBRepo{db: db, log: log}
 }
 
-// GetAllBuyerRequests returns all buyer requests, optionally filtered by status
-func (r *BuyerRequestDBRepo) GetAllBuyerRequests(filterStatuses []string) ([]models.BuyingRequest, error) {
+// GetAllBuyerRequests returns all buyer requests, optionally filtered by productID and/or status
+func (r *BuyerRequestDBRepo) GetAllBuyerRequests(productID *int, filterStatuses []string) ([]models.BuyingRequest, error) {
 	query := "SELECT id, product_id, requested_by, status, created_at FROM buying_requests"
 	args := []interface{}{}
+	whereClauses := []string{}
+	argCount := 1
+
+	if productID != nil {
+		whereClauses = append(whereClauses, fmt.Sprintf("product_id = $%d", argCount))
+		args = append(args, *productID)
+		argCount++
+	}
 
 	if len(filterStatuses) > 0 {
-		query += " WHERE status = ANY($1)"
+		whereClauses = append(whereClauses, fmt.Sprintf("status = ANY($%d)", argCount))
 		args = append(args, pq.Array(filterStatuses))
+		argCount++
+	}
+
+	if len(whereClauses) > 0 {
+		query += " WHERE " + strings.Join(whereClauses, " AND ")
 	}
 
 	rows, err := r.db.Query(query, args...)
@@ -39,9 +54,9 @@ func (r *BuyerRequestDBRepo) GetAllBuyerRequests(filterStatuses []string) ([]mod
 	defer rows.Close()
 
 	var requests []models.BuyingRequest
-	var statusStr string
 	for rows.Next() {
 		var rq models.BuyingRequest
+		var statusStr string
 		if err := rows.Scan(&rq.ID, &rq.ProductID, &rq.RequestedBy, &statusStr, &rq.CreatedAt); err != nil {
 			r.log.Warning(fmt.Sprintf("Failed to scan row in GetAllBuyerRequests: %v", err))
 			continue

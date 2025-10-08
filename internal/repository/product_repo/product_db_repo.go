@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"loopit/internal/db"
 	"loopit/internal/models"
 	"loopit/internal/repository/category_repo"
 	"loopit/internal/repository/user_repo"
@@ -12,13 +13,13 @@ import (
 )
 
 type ProductDBRepo struct {
-	db           *sql.DB
+	db           db.DatabaseInterface
 	categoryRepo category_repo.CategoryRepo
 	userRepo     user_repo.UserRepo
 	log          logger.LoggerInterface
 }
 
-func NewProductDBRepo(db *sql.DB, categoryRepo category_repo.CategoryRepo, userRepo user_repo.UserRepo, log logger.LoggerInterface) *ProductDBRepo {
+func NewProductDBRepo(db db.DatabaseInterface, categoryRepo category_repo.CategoryRepo, userRepo user_repo.UserRepo, log logger.LoggerInterface) *ProductDBRepo {
 	return &ProductDBRepo{
 		db:           db,
 		categoryRepo: categoryRepo,

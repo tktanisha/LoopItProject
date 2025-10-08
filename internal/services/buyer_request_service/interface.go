@@ -8,5 +8,5 @@ import (
 type BuyerRequestServiceInterface interface {
 	CreateBuyerRequest(productID int, userCtx *models.UserContext) error
 	UpdateBuyerRequestStatus(requestID int, updatedStatus buyer_request_status.Status, userCtx *models.UserContext) error
-	GetAllBuyerRequestsByStatus(productID int, status buyer_request_status.Status) ([]models.BuyingRequest, error)
+	GetAllBuyerRequests(productID *int, status []string) ([]models.BuyingRequest, error)
 }

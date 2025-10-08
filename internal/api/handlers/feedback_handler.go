@@ -46,6 +46,19 @@ func (h *FeedbackHandler) GiveFeedback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if err := utils.ValidateOrderID(payload.OrderID); err != nil {
+		utils.WriteErrorResponse(w, http.StatusBadRequest, "invalid request payload", err.Error())
+		return
+	}
+	if err := utils.ValidateFeedbackText(payload.FeedbackText); err != nil {
+		utils.WriteErrorResponse(w, http.StatusBadRequest, "invalid request payload", err.Error())
+		return
+	}
+	if err := utils.ValidateRating(payload.Rating); err != nil {
+		utils.WriteErrorResponse(w, http.StatusBadRequest, "invalid request payload", err.Error())
+		return
+	}
+
 	if err := h.feedbackService.GiveFeedback(payload.OrderID, payload.FeedbackText, payload.Rating, userCtx); err != nil {
 		h.log.Error("Failed to give feedback: " + err.Error())
 		utils.WriteErrorResponse(w, http.StatusBadRequest, "failed to give feedback", err.Error())

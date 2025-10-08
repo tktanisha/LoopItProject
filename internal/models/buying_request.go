@@ -12,3 +12,8 @@ type BuyingRequest struct {
 	Status      buyer_request_status.Status `json:"status"`
 	CreatedAt   time.Time                   `json:"created_at"`
 }
+
+type BuyingRequestDto struct {
+	BuyRequest BuyingRequest   `json:"buy_request"`
+	Product    ProductResponse `json:"product"`
+}

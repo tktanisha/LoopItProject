@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"loopit/internal/db"
 	"loopit/internal/enums/order_status"
 	"loopit/internal/models"
 	"loopit/internal/repository/product_repo"
@@ -14,12 +15,12 @@ import (
 )
 
 type OrderDBRepo struct {
-	db          *sql.DB
+	db          db.DatabaseInterface
 	productRepo product_repo.ProductRepo
 	log         logger.LoggerInterface
 }
 
-func NewOrderDBRepo(db *sql.DB, productRepo product_repo.ProductRepo, log logger.LoggerInterface) *OrderDBRepo {
+func NewOrderDBRepo(db db.DatabaseInterface, productRepo product_repo.ProductRepo, log logger.LoggerInterface) *OrderDBRepo {
 	return &OrderDBRepo{
 		db:          db,
 		productRepo: productRepo,
@@ -101,6 +102,7 @@ func (r *OrderDBRepo) GetLenderOrders(userID int) ([]*models.Order, error) {
     WHERE p.lender_id=$1
     `
 	rows, err := r.db.Query(query, userID)
+	fmt.Println("rows==", *rows)
 	if err != nil {
 		r.log.Error(fmt.Sprintf("DB error fetching lender orders for user %d: %v", userID, err))
 		return nil, err
@@ -121,6 +123,7 @@ func (r *OrderDBRepo) GetLenderOrders(userID int) ([]*models.Order, error) {
 			continue
 		}
 		orders = append(orders, &o)
+		fmt.Println("orders in repo=", &orders)
 	}
 	return orders, nil
 }

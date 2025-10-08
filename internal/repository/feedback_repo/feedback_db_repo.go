@@ -1,19 +1,19 @@
 package feedback_repo
 
 import (
-	"database/sql"
 	"fmt"
+	"loopit/internal/db"
 	"loopit/internal/models"
 	"loopit/pkg/logger"
 	"time"
 )
 
 type FeedBackDBRepo struct {
-	db  *sql.DB
+	db  db.DatabaseInterface
 	log logger.LoggerInterface
 }
 
-func NewFeedBackDBRepo(db *sql.DB, log logger.LoggerInterface) *FeedBackDBRepo {
+func NewFeedBackDBRepo(db db.DatabaseInterface, log logger.LoggerInterface) *FeedBackDBRepo {
 	return &FeedBackDBRepo{db: db, log: log}
 }
 

@@ -42,6 +42,7 @@ func (s *FeedbackService) GiveFeedback(orderID int, feedbackText string, rating 
 		return err
 	}
 
+	fmt.Println("Order status:", order.Status) // Debugging line
 	if order.Status != order_status.Returned {
 		s.log.Warning(fmt.Sprintf("Feedback rejected for order %d: order not returned (status: %s)", orderID, order.Status))
 		return errors.New("feedback can only be given for returned orders")
