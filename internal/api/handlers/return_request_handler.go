@@ -37,11 +37,12 @@ func (h *ReturnRequestHandler) GetPendingReturnRequests(w http.ResponseWriter, r
 	}
 
 	requests, err := h.returnRequestService.GetPendingReturnRequests(userCtx.ID)
+	fmt.Println("handler=",requests)
 	if err != nil {
 		utils.WriteErrorResponse(w, http.StatusInternalServerError, "could not fetch return requests", err.Error())
 		return
 	}
-
+    
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"status":   true,
 		"requests": requests,

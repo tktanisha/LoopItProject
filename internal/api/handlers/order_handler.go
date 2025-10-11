@@ -35,7 +35,7 @@ func (h *OrderHandler) RegisterRoutes(r router.Router) {
 
 // GET /orders/history?status=APPROVED
 func (h *OrderHandler) GetOrderHistory(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("entered in the order history")
+	
 	userCtx, ok := r.Context().Value(constants.UserCtxKey).(*models.UserContext)
 	if !ok || userCtx == nil {
 		utils.WriteErrorResponse(w, http.StatusUnauthorized, "unauthorized", "user context missing")
@@ -54,7 +54,7 @@ func (h *OrderHandler) GetOrderHistory(w http.ResponseWriter, r *http.Request) {
 	}
 
 	orders, err := initializer.OrderService.GetOrderHistory(userCtx, filterStatus)
-	fmt.Println("orders in handler=", &orders)
+	
 	if err != nil {
 		h.log.Error("Failed to fetch order history: " + err.Error())
 		utils.WriteErrorResponse(w, http.StatusInternalServerError, "failed to fetch order history", err.Error())
@@ -68,15 +68,14 @@ func (h *OrderHandler) GetOrderHistory(w http.ResponseWriter, r *http.Request) {
 			h.log.Warning("Failed to fetch product for buyer request: " + err.Error())
 			continue
 		}
-		fmt.Println("product=", product)
+		
 
 		orderResponses = append(orderResponses, &models.OrderDto{Order: *order, Product: *product})
-
-		json.NewEncoder(w).Encode(map[string]interface{}{
-			"status": true,
-			"orders": orderResponses,
-		})
 	}
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"status": true,
+		"orders": orderResponses,
+	})
 }
 
 // PATCH /orders/{orderId}/updateStatus
@@ -128,19 +127,18 @@ func (h *OrderHandler) GetAllApprovedAwaitingOrders(w http.ResponseWriter, r *ht
 	var orderResponses []*models.OrderDto
 	for _, order := range orders {
 		product, err := h.productService.GetProductByID(order.ProductID)
-		fmt.Println("after getting product=", product)
+		
 		if err != nil {
 			h.log.Warning("Failed to fetch product for buyer request: " + err.Error())
 			continue
 		}
 
 		orderResponses = append(orderResponses, &models.OrderDto{Order: *order, Product: *product})
-
-		json.NewEncoder(w).Encode(map[string]interface{}{
+	}
+	json.NewEncoder(w).Encode(map[string]interface{}{
 			"status": true,
 			"orders": orderResponses,
 		})
-	}
 }
 
 // GET /orders/lender
@@ -165,17 +163,16 @@ func (h *OrderHandler) GetLenderOrders(w http.ResponseWriter, r *http.Request) {
 	var orderResponses []*models.OrderDto
 	for _, order := range orders {
 		product, err := h.productService.GetProductByID(order.ProductID)
-		fmt.Println("after getting product=", product)
+		
 		if err != nil {
 			h.log.Warning("Failed to fetch product for buyer request: " + err.Error())
 			continue
 		}
 
 		orderResponses = append(orderResponses, &models.OrderDto{Order: *order, Product: *product})
-
-		json.NewEncoder(w).Encode(map[string]interface{}{
-			"status": true,
-			"orders": orderResponses,
-		})
 	}
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"status": true,
+		"orders": orderResponses,
+	})
 }

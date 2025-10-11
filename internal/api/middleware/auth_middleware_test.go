@@ -76,7 +76,7 @@ func TestAuthMiddleware(t *testing.T) {
 
 			req := httptest.NewRequest(http.MethodGet, "/protected", nil)
 
-			// assign header if set
+		
 			if tt.setupToken != nil {
 				token := tt.setupToken()
 				tt.authHeader = "Bearer " + token
