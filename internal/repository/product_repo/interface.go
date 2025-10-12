@@ -9,5 +9,5 @@ type ProductRepo interface {
 	Create(product *models.Product) error
 	Update(product *models.Product) error
 	Delete(id int) error
-	Save() error
+	Save() error
 }

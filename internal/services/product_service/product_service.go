@@ -74,7 +74,7 @@ func (p *ProductService) CreateProduct(product *models.Product, userCtx *models.
 	product.LenderID = userCtx.ID
 	product.CreatedAt = time.Now()
 	product.IsAvailable = true
-	
+
 	product.ImageUrl = constants.CategoryImageMap[fmt.Sprint(product.CategoryID)]
 	if product.ImageUrl == "" {
 		product.ImageUrl = constants.CategoryImageMap["default"]
@@ -106,20 +106,19 @@ func (p *ProductService) UpdateProduct(productID int, name string, description s
 		p.log.Error(fmt.Sprintf("Product not found for ID %d: %v", productID, err))
 		return errors.New("product not found")
 	}
-	if product.LenderID != userCtx.ID {
+	if product.Product.LenderID != userCtx.ID {
 		p.log.Warning(fmt.Sprintf("User ID %d attempted to update product ID %d they do not own", userCtx.ID, productID))
 		return errors.New("you can only update your own products")
 	}
-	product.Name = name
+	product.Product.Name = name
 
-	product.Description = description
-	product.Price = price
-	product.CategoryID = categoryID
-	product.ImageUrl = constants.CategoryImageMap[fmt.Sprint(categoryID)]
-	if product.ImageUrl == "" {
-		product.ImageUrl = constants.CategoryImageMap["default"]
+	product.Product.Description = description
+	product.Product.CategoryID = categoryID
+	product.Product.ImageUrl = constants.CategoryImageMap[fmt.Sprint(categoryID)]
+	if product.Product.ImageUrl == "" {
+		product.Product.ImageUrl = constants.CategoryImageMap["default"]
 	}
-	err = p.productRepo.Update(product)
+	err = p.productRepo.Update(&product.Product)
 	if err != nil {
 		p.log.Error(fmt.Sprintf("Failed to update product ID %d: %v", productID, err))
 		return err
@@ -147,7 +146,7 @@ func (p *ProductService) DeleteProduct(id int, userCtx *models.UserContext) erro
 		return errors.New("product not found")
 
 	}
-	if product.LenderID != userCtx.ID {
+	if product.Product.LenderID != userCtx.ID {
 		p.log.Warning(fmt.Sprintf("User ID %d attempted to delete product ID %d they do not own", userCtx.ID, id))
 
 		return errors.New("you can only delete your own products")
