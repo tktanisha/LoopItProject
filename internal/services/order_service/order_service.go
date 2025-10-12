@@ -125,23 +125,23 @@ func (s *OrderService) MarkOrderAsReturned(orderID int, userCtx *models.UserCont
 		return errors.New("unauthorized lender")
 	}
 
-	returnRequests, err := s.returnRequestRepo.GetAllReturnRequests([]string{return_request_status.Approved.String()})
-	if err != nil {
-		s.log.Error(fmt.Sprintf("Failed to fetch return requests for order %d, error: %v", orderID, err))
-		return errors.New("unable to find return requests for the order")
-	}
+	// returnRequests, err := s.returnRequestRepo.GetAllReturnRequests([]string{return_request_status.Approved.String()})
+	// if err != nil {
+	// 	s.log.Error(fmt.Sprintf("Failed to fetch return requests for order %d, error: %v", orderID, err))
+	// 	return errors.New("unable to find return requests for the order")
+	// }
 
-	isExists := false
-	for _, rr := range returnRequests {
-		if rr.OrderID == orderID {
-			isExists = true
-			break
-		}
-	}
-	if !isExists {
-		s.log.Warning(fmt.Sprintf("No approved return request found for order %d", orderID))
-		return errors.New("order has not been approved for return")
-	}
+	// isExists := false
+	// for _, rr := range returnRequests {
+	// 	if rr.OrderID == orderID {
+	// 		isExists = true
+	// 		break
+	// 	}
+	// }
+	// if !isExists {
+	// 	s.log.Warning(fmt.Sprintf("No approved return request found for order %d", orderID))
+	// 	return errors.New("order has not been approved for return")
+	// }
 
 	if err := s.orderRepo.UpdateOrderStatus(orderID, order_status.Returned.String()); err != nil {
 		s.log.Error(fmt.Sprintf("Failed to update order %d status to returned, error: %v", orderID, err))

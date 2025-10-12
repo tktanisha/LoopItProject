@@ -105,17 +105,17 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		utils.WriteErrorResponse(w, http.StatusBadRequest, "invalid request payload", err.Error())
 		return
 	}
-	if err := utils.ValidateAddress(req.Address); err != nil {
-		utils.WriteErrorResponse(w, http.StatusBadRequest, "invalid request payload", err.Error())
-		return
-	}
+	// if err := utils.ValidateAddress(req.Address); err != nil {
+	// 	utils.WriteErrorResponse(w, http.StatusBadRequest, "invalid request payload", err.Error())
+	// 	return
+	// }
 
 	err := h.authService.Register(&models.User{
 		FullName:     req.FullName,
 		Email:        req.Email,
 		PasswordHash: req.Password,
 		PhoneNumber:  req.PhoneNumber,
-		Address:      req.Address,
+		Address:      " to be removed later .",
 		SocietyID:    req.SocietyID,
 	})
 	if err != nil {

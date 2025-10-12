@@ -38,10 +38,10 @@ func main() {
 	}
 
 	fmt.Println("hello")
-	// err = db.ExecuteSQLFile(pg, "internal/db/init_db_table.sql")
-	// if err != nil {
-	// 	log.Fatal(fmt.Sprintf("Error initializing tables: %v", err))
-	// }
+	err = db.ExecuteSQLFile(pg, "internal/db/init_db_table.sql")
+	if err != nil {
+		log.Fatal(fmt.Sprintf("Error initializing tables: %v", err))
+	}
 
 	initializer.InitServices(pg, log)
 	fmt.Println("hi")
@@ -61,12 +61,14 @@ func main() {
 	protectedMux := http.NewServeMux()
 	protectedRouter := router.NewMuxRouter(protectedMux)
 
-	api.SetupRoutes(publicRouter, authHandler)
-	api.SetupRoutes(protectedRouter, userHandler, societyHandler, returnRequestHandler, productHandler, categoryHandler, buyerRequestHandler, feedbackHandler, orderHandler)
+	api.SetupRoutes(publicRouter, authHandler, societyHandler)
+	api.SetupRoutes(protectedRouter, userHandler, returnRequestHandler, productHandler, categoryHandler, buyerRequestHandler, feedbackHandler, orderHandler)
 
 	finalHandler := http.NewServeMux()
 	finalHandler.Handle("/auth/", publicMux)
+	finalHandler.Handle("/societies/", publicMux)
 	finalHandler.Handle("/", middleware.AuthMiddleware(log, protectedMux))
+
 	c := cors.New(cors.Options{
 		AllowedOrigins:   []string{"*"},
 		AllowedMethods:   []string{"GET", "POST", "PATCH", "DELETE", "PUT", "OPTIONS"},
