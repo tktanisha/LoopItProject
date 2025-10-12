@@ -8,6 +8,7 @@ import (
 	"loopit/internal/enums"
 	"loopit/internal/models"
 	"loopit/internal/services/user_service"
+	"loopit/internal/utils"
 	"loopit/pkg/logger"
 	"net/http"
 	"strconv"
@@ -69,10 +70,22 @@ func (h *UserHandler) BecomeLender(w http.ResponseWriter, r *http.Request) {
 
 // Get All Users - For Admin Use Only
 func (h *UserHandler) GetAllUsers(w http.ResponseWriter, r *http.Request) {
-	users, err := h.userService.GetAllUsers()
+	
+	query := r.URL.Query()
+	search := query.Get("search")
+	role := query.Get("role")
+	societyID := query.Get("society_id")
+
+	filters := models.UserFilter{
+		Search:    search,
+		Role:      role,
+		SocietyID: societyID,
+	}
+
+	users, err := h.userService.GetAllUsers(filters)
 	if err != nil {
 		h.log.Error("Error fetching users: " + err.Error())
-		http.Error(w, "internal server error", http.StatusInternalServerError)
+		utils.WriteErrorResponse(w, http.StatusInternalServerError, "failed to fetch users", err.Error())
 		return
 	}
 
@@ -83,6 +96,7 @@ func (h *UserHandler) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 		"users":   users,
 	})
 }
+
 
 // Get User By ID - For Admin Use Only
 func (h *UserHandler) GetUserByID(w http.ResponseWriter, r *http.Request) {

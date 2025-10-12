@@ -25,15 +25,69 @@ func NewUserDBRepo(db db.DatabaseInterface, lenderRepo lender_repo.LenderRepo, l
 }
 
 // FindAll returns all users
-func (r *UserDBRepo) FindAll() []models.User {
-	rows, err := r.db.Query("SELECT id, full_name, email, phone_number, address, password_hash, society_id, role, created_at FROM users")
+// func (r *UserDBRepo) FindAll() []models.User {
+// 	rows, err := r.db.Query("SELECT id, full_name, email, phone_number, address, password_hash, society_id, role, created_at FROM users")
+// 	if err != nil {
+// 		r.log.Error(fmt.Sprintf("DB query failed in FindAll: %v", err))
+// 		return []models.User{}
+// 	}
+// 	defer rows.Close()
+
+// 	var users []models.User
+// 	for rows.Next() {
+// 		var u models.User
+// 		var roleStr string
+// 		if err := rows.Scan(&u.ID, &u.FullName, &u.Email, &u.PhoneNumber, &u.Address,
+// 			&u.PasswordHash, &u.SocietyID, &roleStr, &u.CreatedAt); err != nil {
+// 			r.log.Warning(fmt.Sprintf("Row scan failed in FindAll: %v", err))
+// 			continue
+// 		}
+// 		u.Role, err = enums.ParseRole(roleStr)
+// 		if err != nil {
+// 			r.log.Warning(fmt.Sprintf("Invalid role parsing in FindAll for user: %s, error: %v", u.Email, err))
+// 			continue
+// 		}
+// 		users = append(users, u)
+// 	}
+// 	return users
+// }
+func (r *UserDBRepo) FindAll(filters models.UserFilter) ([]*models.User, error) {
+	query := `
+		SELECT id, full_name, email, phone_number, address, password_hash, society_id, role, created_at
+		FROM users WHERE 1=1
+	`
+	args := []interface{}{}
+	argIdx := 1 // PostgreSQL placeholder counter
+
+	if filters.Search != "" {
+		query += fmt.Sprintf(" AND (LOWER(full_name) LIKE LOWER($%d) OR LOWER(email) LIKE LOWER($%d))", argIdx, argIdx+1)
+		searchParam := "%" + filters.Search + "%"
+		args = append(args, searchParam, searchParam)
+		argIdx += 2
+	}
+	if filters.Role != "" {
+		query += fmt.Sprintf(" AND role = $%d", argIdx)
+		args = append(args, filters.Role)
+		argIdx++
+	}
+	if filters.SocietyID != "" {
+		query += fmt.Sprintf(" AND society_id = $%d", argIdx)
+		args = append(args, filters.SocietyID)
+		argIdx++
+	}
+
+	r.log.Info(fmt.Sprintf("Executing user query: %s with args %v", query, args))
+
+	rows, err := r.db.Query(query, args...)
 	if err != nil {
-		r.log.Error(fmt.Sprintf("DB query failed in FindAll: %v", err))
-		return []models.User{}
+		if r.log != nil {
+			r.log.Error(fmt.Sprintf("DB error fetching users: %v", err))
+		}
+		return nil, err
 	}
 	defer rows.Close()
-
-	var users []models.User
+    
+	var users []*models.User
 	for rows.Next() {
 		var u models.User
 		var roleStr string
@@ -47,10 +101,14 @@ func (r *UserDBRepo) FindAll() []models.User {
 			r.log.Warning(fmt.Sprintf("Invalid role parsing in FindAll for user: %s, error: %v", u.Email, err))
 			continue
 		}
-		users = append(users, u)
-	}
-	return users
+		users = append(users, &u)
+
+
+	
 }
+return users, nil
+}
+
 
 // FindByID returns a user by ID
 func (r *UserDBRepo) FindByID(userID int) (*models.User, error) {

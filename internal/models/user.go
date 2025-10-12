@@ -17,6 +17,13 @@ type User struct {
 	CreatedAt    time.Time  `json:"created_at"`
 }
 
+
+type UserFilter struct {
+	Search    string  `json:"search"`
+	Role      string   `json:"role"`
+	SocietyID string   `json:"society_id"`
+}
+
 type UserContext struct {
 	ID   int
 	Name string

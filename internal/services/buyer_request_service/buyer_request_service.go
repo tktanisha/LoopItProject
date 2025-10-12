@@ -59,10 +59,9 @@ func (s *BuyerRequestService) CreateBuyerRequest(productID int, userCtx *models.
 		return errors.New("lender cannot create a buying request for their own product")
 	}
 
-	// Step 3: Check for duplicate requests by filtering in the database
-	// Create a pointer to the productID for the repository function
+	
 	prodIDPtr := &productID
-	statuses := []string{br_status.Pending.String(), br_status.Approved.String()}
+	statuses := []string{br_status.Pending.String()}
 
 	// Pass productID and statuses to the repository for efficient filtering
 	existingRequests, err := s.buyerRequestRepo.GetAllBuyerRequests(prodIDPtr, statuses)

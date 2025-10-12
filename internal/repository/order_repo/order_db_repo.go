@@ -45,18 +45,41 @@ func (r *OrderDBRepo) CreateOrder(order models.Order) error {
 
 // UpdateOrderStatus updates the status of an order
 func (r *OrderDBRepo) UpdateOrderStatus(orderID int, newStatus string) error {
-	result, err := r.db.Exec("UPDATE orders SET status=$1 WHERE id=$2", newStatus, orderID)
+	var err error
+	var result sql.Result
+
+	if newStatus == "Returned" {
+		currentTime := time.Now()
+
+		result, err = r.db.Exec(
+			`UPDATE orders SET status=$1, end_date=$2 WHERE id=$3`,
+			newStatus,
+			currentTime,
+			orderID,
+		)
+	} else {
+		result, err = r.db.Exec(
+			`UPDATE orders SET status=$1 WHERE id=$2`,
+			newStatus,
+			orderID,
+		)
+	}
+
 	if err != nil {
 		r.log.Error(fmt.Sprintf("DB error updating order %d to status %s: %v", orderID, newStatus, err))
 		return err
 	}
+
 	rowsAffected, _ := result.RowsAffected()
 	if rowsAffected == 0 {
 		r.log.Warning(fmt.Sprintf("DB: No order found to update for id %d", orderID))
 		return errors.New("order not found")
 	}
+
 	return nil
 }
+
+
 
 // GetOrderHistory returns orders for a user, optionally filtered by status
 func (r *OrderDBRepo) GetOrderHistory(userID int, filterStatuses []string) ([]*models.Order, error) {

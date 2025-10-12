@@ -34,10 +34,21 @@ func (s *UserService) BecomeLender(user *models.UserContext) error {
 	return nil
 }
 
-func (s *UserService) GetAllUsers() ([]models.User, error) {
-	users := s.userRepo.FindAll()
+
+	func (s *UserService) GetAllUsers(filters models.UserFilter) ([]*models.User, error) {
+	s.log.Info("Fetching all users with filters")
+
+	users, err := s.userRepo.FindAll(filters)
+	if err != nil {
+		s.log.Error(fmt.Sprintf("Failed to fetch users: %v", err))
+		return nil, err
+	}
+
+	s.log.Info(fmt.Sprintf("Fetched %d users successfully", len(users)))
 	return users, nil
 }
+
+
 
 func (s *UserService) GetUserByID(id int) (*models.User, error) {
 	user, err := s.userRepo.FindByID(id)
