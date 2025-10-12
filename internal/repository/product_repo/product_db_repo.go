@@ -35,25 +35,31 @@ func (r *ProductDBRepo) FindAll(filters models.ProductFilter) ([]*models.Product
 		FROM products WHERE 1=1
 	`
 	args := []interface{}{}
+	argIdx := 1 // For PostgreSQL placeholders
 
-	// Apply filters dynamically
 	if filters.Search != "" {
-		query += " AND (LOWER(name) LIKE LOWER(?) OR LOWER(description) LIKE LOWER(?))"
+		query += fmt.Sprintf(" AND (LOWER(name) LIKE LOWER($%d) OR LOWER(description) LIKE LOWER($%d))", argIdx, argIdx+1)
 		searchParam := "%" + filters.Search + "%"
 		args = append(args, searchParam, searchParam)
+		argIdx += 2
 	}
 	if filters.LenderID != "" {
-		query += " AND lender_id = ?"
+		query += fmt.Sprintf(" AND lender_id = $%d", argIdx)
 		args = append(args, filters.LenderID)
+		argIdx++
 	}
 	if filters.CategoryID != "" {
-		query += " AND category_id = ?"
+		query += fmt.Sprintf(" AND category_id = $%d", argIdx)
 		args = append(args, filters.CategoryID)
+		argIdx++
 	}
 	if filters.IsAvailable != "" {
-		query += " AND is_available = ?"
+		query += fmt.Sprintf(" AND is_available = $%d", argIdx)
 		args = append(args, filters.IsAvailable)
+		argIdx++
 	}
+
+	r.log.Info(fmt.Sprintf("Executing product query: %s with args %v", query, args))
 
 	rows, err := r.db.Query(query, args...)
 	if err != nil {
@@ -118,18 +124,18 @@ func (r *ProductDBRepo) FindByID(id int) (*models.ProductResponse, error) {
 // Create inserts a new product into the database
 func (r *ProductDBRepo) Create(product *models.Product) error {
 	query := `
-    INSERT INTO products (lender_id, category_id, name, description, duration, is_available, created_at)
-    VALUES ($1, $2, $3, $4, $5, $6, $7)
+    INSERT INTO products (lender_id, category_id, name, description, duration, is_available, image_url, created_at)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
     RETURNING id
     `
-	err := r.db.QueryRow(query, product.LenderID, product.CategoryID, product.Name, product.Description, product.Duration, product.IsAvailable, time.Now()).Scan(&product.ID)
+	err := r.db.QueryRow(query, product.LenderID, product.CategoryID, product.Name, product.Description, product.Duration, product.IsAvailable, product.ImageUrl, time.Now()).Scan(&product.ID)
 	if err != nil && r.log != nil {
 		r.log.Error(fmt.Sprintf("DB error creating product '%s': %v", product.Name, err))
 	}
 	return err
 }
 
-//  update
+// update
 func (r *ProductDBRepo) Update(product *models.Product) error {
 	query := `
 	UPDATE products
@@ -143,7 +149,7 @@ func (r *ProductDBRepo) Update(product *models.Product) error {
 	return err
 }
 
-// delete 
+// delete
 func (r *ProductDBRepo) Delete(id int) error {
 	_, err := r.db.Exec("DELETE FROM products WHERE id=$1", id)
 	if err != nil && r.log != nil {

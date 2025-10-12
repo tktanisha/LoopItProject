@@ -25,11 +25,11 @@ func NewReturnRequestDBRepo(db db.DatabaseInterface, log logger.LoggerInterface)
 // CreateReturnRequest inserts a new return request into the database
 func (r *ReturnRequestDBRepo) CreateReturnRequest(req models.ReturnRequest) error {
 	query := `
-    INSERT INTO return_requests (order_id, status, created_at)
-    VALUES ($1, $2, $3)
+    INSERT INTO return_requests (order_id, requested_by,status, created_at)
+    VALUES ($1, $2, $3,$4)
     RETURNING id
     `
-	err := r.db.QueryRow(query, req.OrderID, req.Status.String(), time.Now()).Scan(&req.ID)
+	err := r.db.QueryRow(query, req.OrderID, req.RequestedBy,req.Status.String(), time.Now()).Scan(&req.ID)
 	if err != nil {
 		r.log.Error("DB error creating return request: " + err.Error())
 		return err

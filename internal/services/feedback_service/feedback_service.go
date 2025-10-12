@@ -3,7 +3,6 @@ package feedback_service
 import (
 	"errors"
 	"fmt"
-	"loopit/internal/enums/order_status"
 	"loopit/internal/models"
 	"loopit/internal/repository/feedback_repo"
 	"loopit/internal/repository/order_repo"
@@ -41,13 +40,6 @@ func (s *FeedbackService) GiveFeedback(orderID int, feedbackText string, rating 
 		s.log.Error(fmt.Sprintf("Order not found for ID %d, error: %v", orderID, err))
 		return err
 	}
-
-	fmt.Println("Order status:", order.Status) // Debugging line
-	if order.Status != order_status.Returned {
-		s.log.Warning(fmt.Sprintf("Feedback rejected for order %d: order not returned (status: %s)", orderID, order.Status))
-		return errors.New("feedback can only be given for returned orders")
-	}
-
 	product, err := s.product_repo.FindByID(order.ProductID)
 	if err != nil {
 		s.log.Error(fmt.Sprintf("Product not found for order %d, productID %d, error: %v", orderID, order.ProductID, err))

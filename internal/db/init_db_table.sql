@@ -47,7 +47,7 @@ CREATE TABLE IF NOT EXISTS products (
     duration INT NOT NULL,
     is_available BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    image_url VARCHAR(100) NOT NULL,
+    image_url VARCHAR(500) NOT NULL,
     FOREIGN KEY (lender_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE
 );
