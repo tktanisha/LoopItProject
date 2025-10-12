@@ -41,6 +41,7 @@ type registerRequest struct {
 	Password    string `json:"password"`
 	PhoneNumber string `json:"phone_number"`
 	Address     string `json:"address"`
+	SocietyID   int    `json:"society_id"`
 }
 
 // Login authenticates user and returns JWT token
@@ -115,6 +116,7 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		PasswordHash: req.Password,
 		PhoneNumber:  req.PhoneNumber,
 		Address:      req.Address,
+		SocietyID:    req.SocietyID,
 	})
 	if err != nil {
 		h.log.Warning("Registration failed: " + err.Error())

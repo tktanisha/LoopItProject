@@ -138,3 +138,13 @@ func (r *UserDBRepo) BecomeLender(userID int) error {
 func (r *UserDBRepo) Save() error {
 	return nil
 }
+
+func (r *UserDBRepo) DeleteByID(userID int) error {
+	_, err := r.db.Exec("DELETE FROM users WHERE id=$1", userID)
+	if err != nil {
+		r.log.Error(fmt.Sprintf("Failed to delete user in DeleteByID for userID=%d, error: %v", userID, err))
+		return err
+	}
+	r.log.Info(fmt.Sprintf("User deleted successfully, userID=%d", userID))
+	return nil;
+}

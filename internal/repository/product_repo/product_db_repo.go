@@ -29,8 +29,33 @@ func NewProductDBRepo(db db.DatabaseInterface, categoryRepo category_repo.Catego
 }
 
 // FindAll returns all products with category and lender info
-func (r *ProductDBRepo) FindAll() ([]*models.ProductResponse, error) {
-	rows, err := r.db.Query("SELECT id, lender_id, category_id, name, description, duration, is_available, created_at FROM products")
+func (r *ProductDBRepo) FindAll(filters models.ProductFilter) ([]*models.ProductResponse, error) {
+	query := `
+		SELECT id, lender_id, category_id, name, description, duration, is_available, created_at, image_url 
+		FROM products WHERE 1=1
+	`
+	args := []interface{}{}
+
+	// Apply filters dynamically
+	if filters.Search != "" {
+		query += " AND (LOWER(name) LIKE LOWER(?) OR LOWER(description) LIKE LOWER(?))"
+		searchParam := "%" + filters.Search + "%"
+		args = append(args, searchParam, searchParam)
+	}
+	if filters.LenderID != "" {
+		query += " AND lender_id = ?"
+		args = append(args, filters.LenderID)
+	}
+	if filters.CategoryID != "" {
+		query += " AND category_id = ?"
+		args = append(args, filters.CategoryID)
+	}
+	if filters.IsAvailable != "" {
+		query += " AND is_available = ?"
+		args = append(args, filters.IsAvailable)
+	}
+
+	rows, err := r.db.Query(query, args...)
 	if err != nil {
 		if r.log != nil {
 			r.log.Error(fmt.Sprintf("DB error fetching products: %v", err))
@@ -42,7 +67,7 @@ func (r *ProductDBRepo) FindAll() ([]*models.ProductResponse, error) {
 	var responses []*models.ProductResponse
 	for rows.Next() {
 		var p models.Product
-		if err := rows.Scan(&p.ID, &p.LenderID, &p.CategoryID, &p.Name, &p.Description, &p.Duration, &p.IsAvailable, &p.CreatedAt); err != nil {
+		if err := rows.Scan(&p.ID, &p.LenderID, &p.CategoryID, &p.Name, &p.Description, &p.Duration, &p.IsAvailable, &p.CreatedAt, &p.ImageUrl); err != nil {
 			if r.log != nil {
 				r.log.Warning(fmt.Sprintf("DB warning scanning product row: %v", err))
 			}
@@ -100,6 +125,29 @@ func (r *ProductDBRepo) Create(product *models.Product) error {
 	err := r.db.QueryRow(query, product.LenderID, product.CategoryID, product.Name, product.Description, product.Duration, product.IsAvailable, time.Now()).Scan(&product.ID)
 	if err != nil && r.log != nil {
 		r.log.Error(fmt.Sprintf("DB error creating product '%s': %v", product.Name, err))
+	}
+	return err
+}
+
+//  update
+func (r *ProductDBRepo) Update(product *models.Product) error {
+	query := `
+	UPDATE products
+	SET lender_id=$1, category_id=$2, name=$3, description=$4, duration=$5, is_available=$6
+	WHERE id=$7
+	`
+	_, err := r.db.Exec(query, product.LenderID, product.CategoryID, product.Name, product.Description, product.Duration, product.IsAvailable, product.ID)
+	if err != nil && r.log != nil {
+		r.log.Error(fmt.Sprintf("DB error updating product ID %d: %v", product.ID, err))
+	}
+	return err
+}
+
+// delete 
+func (r *ProductDBRepo) Delete(id int) error {
+	_, err := r.db.Exec("DELETE FROM products WHERE id=$1", id)
+	if err != nil && r.log != nil {
+		r.log.Error(fmt.Sprintf("DB error deleting product ID %d: %v", id, err))
 	}
 	return err
 }

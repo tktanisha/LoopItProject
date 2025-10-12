@@ -7,5 +7,7 @@ type SocietyRepo interface {
 	Create(society models.Society) error
 	FindAll() ([]models.Society, error)
 	FindByID(id int) (models.Society, error)
+	Update(society models.Society) error
+	Delete(id int) error
 	Save() error
 }

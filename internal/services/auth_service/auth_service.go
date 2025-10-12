@@ -41,7 +41,6 @@ func (a *AuthService) Register(user *models.User) error {
 	user.CreatedAt = time.Now()
 	user.PasswordHash = hash
 	user.Role = enums.RoleUser
-	user.SocietyID = 1
 
 	a.userRepo.Create(user)
 	a.log.Info(fmt.Sprintf("User registered successfully: %s", user.Email))

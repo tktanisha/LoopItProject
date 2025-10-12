@@ -5,4 +5,6 @@ import "loopit/internal/models"
 type CategoryServiceInterface interface {
 	GetAllCategories() ([]models.Category, error)
 	CreateCategory(name string, price, security float64) error
+	UpdateCategory(id int, name string, price, security float64) error
+	DeleteCategory(id int) error
 }

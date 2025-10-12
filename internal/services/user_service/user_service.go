@@ -33,3 +33,30 @@ func (s *UserService) BecomeLender(user *models.UserContext) error {
 	s.log.Info("User successfully became a lender")
 	return nil
 }
+
+func (s *UserService) GetAllUsers() ([]models.User, error) {
+	users := s.userRepo.FindAll()
+	return users, nil
+}
+
+func (s *UserService) GetUserByID(id int) (*models.User, error) {
+	user, err := s.userRepo.FindByID(id)
+	if err != nil {
+		s.log.Error(fmt.Sprintf("Failed to retrieve user by ID %d: %v", id, err))
+		return nil, err
+	}
+
+	s.log.Info(fmt.Sprintf("Successfully retrieved user by ID %d", id))
+	return user, nil
+}
+
+func (s *UserService) DeleteUserByID(id int) error {
+	err := s.userRepo.DeleteByID(id)
+	if err != nil {
+		s.log.Error(fmt.Sprintf("Failed to delete user by ID %d: %v", id, err))
+		return err
+	}
+
+	s.log.Info(fmt.Sprintf("Successfully deleted user by ID %d", id))
+	return nil
+}

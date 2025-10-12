@@ -44,3 +44,33 @@ func (c *CategoryService) CreateCategory(name string, price, security float64) e
 	c.log.Info(fmt.Sprintf("Service: Category created successfully: '%s'", name))
 	return nil
 }
+
+func (c *CategoryService) UpdateCategory(id int, name string, price, security float64) error {
+	c.log.Info(fmt.Sprintf("Service: Updating category ID %d to name '%s', price %.2f, security %.2f", id, name, price, security))
+	category, err := c.categoryRepo.FindByID(id)
+	
+	if err != nil {
+		c.log.Error(fmt.Sprintf("Service: Failed to find category ID %d, error: %v", id, err))
+		return err
+	}
+	category.Name = name
+	category.Price = price
+	category.Security = security
+
+	if err := c.categoryRepo.Update(category); err != nil {
+		c.log.Error(fmt.Sprintf("Service: Failed to update category ID %d, error: %v", id, err))
+		return err
+	}
+	c.log.Info(fmt.Sprintf("Service: Category ID %d updated successfully", id))
+	return nil
+}
+
+func (c *CategoryService) DeleteCategory(id int) error {
+	c.log.Info(fmt.Sprintf("Service: Deleting category ID %d", id))
+	if err := c.categoryRepo.Delete(id); err != nil {
+		c.log.Error(fmt.Sprintf("Service: Failed to delete category ID %d, error: %v", id, err))
+		return err
+	}
+	c.log.Info(fmt.Sprintf("Service: Category ID %d deleted successfully", id))
+	return nil
+}

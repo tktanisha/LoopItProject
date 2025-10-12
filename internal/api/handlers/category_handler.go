@@ -9,6 +9,7 @@ import (
 	"loopit/internal/utils"
 	"loopit/pkg/logger"
 	"net/http"
+	"strconv"
 )
 
 type CategoryHandler struct {
@@ -27,6 +28,8 @@ func NewCategoryHandler(service category_service.CategoryServiceInterface, log l
 func (h *CategoryHandler) RegisterRoutes(r router.Router) {
 	r.HandleFunc("POST /categories", h.CreateCategory)
 	r.HandleFunc("GET /categories", h.GetAllCategories)
+	r.HandleFunc("PUT /categories/{id}", h.UpdateCategory)
+	r.HandleFunc("DELETE /categories/{id}", h.DeleteCategory)
 }
 
 // CreateCategory creates a new category; requires authenticated user
@@ -86,5 +89,62 @@ func (h *CategoryHandler) GetAllCategories(w http.ResponseWriter, r *http.Reques
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"status":     true,
 		"categories": categories,
+	})
+}
+
+func (h *CategoryHandler) UpdateCategory(w http.ResponseWriter, r *http.Request) {
+	idStr := r.PathValue("id")
+	categoryID, err := strconv.Atoi(idStr)
+
+	if err != nil || categoryID <= 0 {
+		utils.WriteErrorResponse(w, http.StatusBadRequest, "invalid category ID", "category ID must be a positive integer")
+		return
+	}
+
+	// use category model for payload
+	var payload struct {
+		Name     string  `json:"name"`
+		Price    float64 `json:"price"`
+		Security float64 `json:"security"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		utils.WriteErrorResponse(w, http.StatusBadRequest, "invalid request payload", err.Error())
+		return
+	}
+	if payload.Price < 0 || payload.Security < 0 {
+		utils.WriteErrorResponse(w, http.StatusBadRequest, "invalid request payload", "price and security must be non-negative")
+		return
+	}
+	if err := h.service.UpdateCategory(categoryID, payload.Name, payload.Price, payload.Security); err != nil {
+		h.log.Error("Failed to update category: " + err.Error())
+		utils.WriteErrorResponse(w, http.StatusBadRequest, "failed to update category", err.Error())
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"status":  true,
+		"message": "category updated successfully",
+	})
+}
+
+func (h *CategoryHandler) DeleteCategory(w http.ResponseWriter, r *http.Request) {
+	idStr := r.PathValue("id")
+	categoryID, err := strconv.Atoi(idStr)
+	if err != nil || categoryID <= 0 {
+		utils.WriteErrorResponse(w, http.StatusBadRequest, "invalid category ID", "category ID must be a positive integer")
+		return
+	}
+	if err := h.service.DeleteCategory(categoryID); err != nil {
+		h.log.Error("Failed to delete category: " + err.Error())
+		utils.WriteErrorResponse(w, http.StatusBadRequest, "failed to delete category", err.Error())
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"status":  true,
+		"message": "category deleted successfully",
 	})
 }

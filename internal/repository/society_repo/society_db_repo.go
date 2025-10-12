@@ -72,6 +72,48 @@ func (r *SocietyDBRepo) FindByID(id int) (models.Society, error) {
 	return s, nil
 }
 
+// update modifies an existing society in the database
+func (r *SocietyDBRepo) Update(society models.Society) error {
+	query := `UPDATE societies SET name=$1, location=$2, pincode=$3 WHERE id=$4`
+	result, err := r.db.Exec(query, society.Name, society.Location, society.Pincode, society.ID)
+	if err != nil {
+		r.log.Error(fmt.Sprintf("Repo: Failed to update society (id=%d): %v", society.ID, err))
+		return err
+	}
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		r.log.Error(fmt.Sprintf("Repo: Failed to get rows affected for society update (id=%d): %v", society.ID, err))
+		return err
+	}
+	if rowsAffected == 0 {
+		r.log.Warning(fmt.Sprintf("Repo: No society found to update with id=%d", society.ID))
+		return errors.New("society not found")
+	}
+	r.log.Info(fmt.Sprintf("Repo: Society updated successfully (id=%d)", society.ID))
+	return nil
+}
+
+// Delete removes a society from the database by its ID
+func (r *SocietyDBRepo) Delete(id int) error {
+	query := `DELETE FROM societies WHERE id=$1`
+	result, err := r.db.Exec(query, id)
+	if err != nil {
+		r.log.Error(fmt.Sprintf("Repo: Failed to delete society (id=%d): %v", id, err))
+		return err
+	}
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		r.log.Error(fmt.Sprintf("Repo: Failed to get rows affected for society delete (id=%d): %v", id, err))
+		return err
+	}
+	if rowsAffected == 0 {
+		r.log.Warning(fmt.Sprintf("Repo: No society found to delete with id=%d", id))
+		return errors.New("society not found")
+	}
+	r.log.Info(fmt.Sprintf("Repo: Society deleted successfully (id=%d)", id))
+	return nil
+}
+
 // Save is a no-op for Postgres because changes are applied immediately
 func (r *SocietyDBRepo) Save() error {
 	return nil

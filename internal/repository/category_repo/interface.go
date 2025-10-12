@@ -7,5 +7,7 @@ type CategoryRepo interface {
 	FindAll() ([]models.Category, error)
 	FindByID(id int) (models.Category, error)
 	Create(category models.Category) (err error)
+	Update(category models.Category) error
+	Delete(id int) error
 	Save() error
 }

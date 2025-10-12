@@ -105,6 +105,6 @@ CREATE TABLE IF NOT EXISTS return_requests (
     requested_by INT NOT NULL,
     status VARCHAR(20) NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE
-     FOREIGN KEY (requested_by) REFERENCES users(id) ON DELETE CASCADE
+    FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
+    FOREIGN KEY (requested_by) REFERENCES users(id) ON DELETE CASCADE
 );

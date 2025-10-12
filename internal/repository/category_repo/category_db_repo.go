@@ -76,6 +76,57 @@ func (r *CategoryDBRepo) Create(category models.Category) error {
 	return err
 }
 
+// Update modifies an existing category in the database
+func (r *CategoryDBRepo) Update(category models.Category) error {
+	query := `UPDATE categories SET name=$1, price=$2, security=$3 WHERE id=$4`
+	result, err := r.db.Exec(query, category.Name, category.Price, category.Security, category.ID)
+	if err != nil {
+		if r.log != nil {
+			r.log.Error(fmt.Sprintf("Repo: DB error updating category id %d: %v", category.ID, err))
+		}
+		return err
+	}
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		if r.log != nil {
+			r.log.Error(fmt.Sprintf("Repo: DB error fetching rows affected for category id %d: %v", category.ID, err))
+		}
+		return err
+	}
+	if rowsAffected == 0 {
+		if r.log != nil {
+			r.log.Warning(fmt.Sprintf("Repo: No category found to update with id %d", category.ID))
+		}
+		return errors.New("category not found")
+	}
+	return nil
+}
+
+func (r *CategoryDBRepo) Delete(id int) error {
+	query := `DELETE FROM categories WHERE id=$1`
+	result, err := r.db.Exec(query, id)
+	if err != nil {
+		if r.log != nil {
+			r.log.Error(fmt.Sprintf("Repo: DB error deleting category id %d: %v", id, err))
+		}
+		return err
+	}
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		if r.log != nil {
+			r.log.Error(fmt.Sprintf("Repo: DB error fetching rows affected for delete category id %d: %v", id, err))
+		}
+		return err
+	}
+	if rowsAffected == 0 {
+		if r.log != nil {
+			r.log.Warning(fmt.Sprintf("Repo: No category found to delete with id %d", id))
+		}
+		return errors.New("category not found")
+	}
+	return nil
+}
+
 // Save is a no-op for Postgres
 func (r *CategoryDBRepo) Save() error {
 	return nil

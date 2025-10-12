@@ -10,6 +10,7 @@ import (
 	"loopit/internal/utils"
 	"loopit/pkg/logger"
 	"net/http"
+	"strconv"
 )
 
 type SocietyHandler struct {
@@ -24,6 +25,8 @@ func NewSocietyHandler(societyService society_service.SocietyServiceInterface, l
 func (h *SocietyHandler) RegisterRoutes(r router.Router) {
 	r.HandleFunc("GET /societies", h.GetAllSocieties)
 	r.HandleFunc("POST /societies", h.CreateSociety)
+	r.HandleFunc("PUT /societies/{id}", h.UpdateSociety)
+	r.HandleFunc("DELETE /societies/{id}", h.DeleteSociety)
 
 }
 
@@ -109,5 +112,65 @@ func (h *SocietyHandler) CreateSociety(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"status":  true,
 		"message": "society created successfully",
+	})
+}
+
+func (h *SocietyHandler) UpdateSociety(w http.ResponseWriter, r *http.Request) {
+	idStr := r.PathValue("id")
+	societyID, err := strconv.Atoi(idStr)
+
+	if err != nil || societyID <= 0 {
+		utils.WriteErrorResponse(w, http.StatusBadRequest, "invalid society ID", "ID must be a positive integer")
+		return
+	}
+
+	var payload struct {
+		Name     string `json:"name"`
+		Location string `json:"location"`
+		Pincode  string `json:"pincode"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		utils.WriteErrorResponse(w, http.StatusBadRequest, "invalid request payload", err.Error())
+		return
+	}
+
+	if payload.Name == "" && payload.Location == "" && payload.Pincode == "" {
+		utils.WriteErrorResponse(w, http.StatusBadRequest, "no fields to update", "at least one field (name, location, pincode) must be provided")
+		return
+	}
+
+	if err := h.societyService.UpdateSociety(societyID, payload.Name, payload.Location, payload.Pincode); err != nil {
+		h.log.Error("Failed to update society: " + err.Error())
+		utils.WriteErrorResponse(w, http.StatusInternalServerError, "failed to update society", err.Error())
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"status":  true,
+		"message": "society updated successfully",
+	})
+}
+
+func (h *SocietyHandler) DeleteSociety(w http.ResponseWriter, r *http.Request) {
+	idStr := r.PathValue("id")
+	societyID, err := strconv.Atoi(idStr)
+	if err != nil || societyID <= 0 {
+		utils.WriteErrorResponse(w, http.StatusBadRequest, "invalid society ID", "ID must be a positive integer")
+		return
+	}
+
+	if err := h.societyService.DeleteSociety(societyID); err != nil {
+		h.log.Error("Failed to delete society: " + err.Error())
+		utils.WriteErrorResponse(w, http.StatusInternalServerError, "failed to delete society", err.Error())
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"status":  true,
+		"message": "society deleted successfully",
 	})
 }

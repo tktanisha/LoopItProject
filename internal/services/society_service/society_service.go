@@ -50,3 +50,34 @@ func (s *SocietyService) CreateSociety(name, location, pincode string) error {
 	s.log.Info(fmt.Sprintf("Service: Society created successfully (name=%s)", society.Name))
 	return nil
 }
+
+func (s *SocietyService) UpdateSociety(id int, name, location, pincode string) error {
+	s.log.Info(fmt.Sprintf("Service: Updating society (id=%d)", id))
+	society, err := s.societyRepo.FindByID(id)
+	if err != nil {
+		s.log.Error(fmt.Sprintf("Service: Society not found (id=%d): %v", id, err))
+		return err
+	}
+	society.Name = name
+	society.Location = location
+	society.Pincode = pincode
+	err = s.societyRepo.Update(society)
+	if err != nil {
+		s.log.Error(fmt.Sprintf("Service: Failed to update society (id=%d): %v", id, err))
+		return err
+	}
+	s.log.Info(fmt.Sprintf("Service: Society updated successfully (id=%d)", id))
+	return nil
+}
+
+func (s *SocietyService) DeleteSociety(id int) error {
+	s.log.Info(fmt.Sprintf("Service: Deleting society (id=%d)", id))
+	err := s.societyRepo.Delete(id)
+	if err != nil {
+		s.log.Error(fmt.Sprintf("Service: Failed to delete society (id=%d): %v", id, err))
+		return err
+	}
+	s.log.Info(fmt.Sprintf("Service: Society deleted successfully (id=%d)", id))
+	return nil
+}
+

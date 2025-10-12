@@ -11,10 +11,18 @@ type Product struct {
 	Duration    int       `json:"duration"` // Can be time.Duration or string
 	IsAvailable bool      `json:"is_available"`
 	CreatedAt   time.Time `json:"created_at"`
+	ImageUrl   string    `json:"image_url"`
 }
 
 type ProductResponse struct {
 	Product  Product  `json:"product"`
 	Category Category `json:"category"`
 	User     User     `json:"user"`
+}
+
+type ProductFilter struct {
+	Search      string
+	LenderID    string
+	CategoryID  string
+	IsAvailable string
 }
