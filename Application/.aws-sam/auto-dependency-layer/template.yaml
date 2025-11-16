@@ -1,0 +1,137 @@
+Transform: AWS::Serverless-2016-10-31
+Globals:
+  Function:
+    Architectures:
+    - x86_64
+    Timeout: 200
+    Handler: bootstrap
+    Runtime: provided.al2023
+Resources:
+  Api:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: v1
+      Cors:
+        AllowMethods: '''GET,POST,PUT,DELETE,OPTIONS,PATCH'''
+        AllowHeaders: '''Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'''
+        AllowOrigin: '''*'''
+  Login:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: go1.x
+      SamResourceId: Login
+    Properties:
+      CodeUri: Login
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Method: post
+            Path: /auth/login
+            RestApiId:
+              Ref: Api
+      Policies:
+      - AWSLambdaBasicExecutionRole
+      - DynamoDBCrudPolicy:
+          TableName:
+            Fn::ImportValue: Loopit-DynamoTableName
+  register:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: go1.x
+      SamResourceId: register
+    Properties:
+      CodeUri: register
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Method: post
+            Path: /auth/register
+            RestApiId:
+              Ref: Api
+      Policies:
+      - AWSLambdaBasicExecutionRole
+      - DynamoDBCrudPolicy:
+          TableName:
+            Fn::ImportValue: Loopit-DynamoTableName
+  CreateCategory:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: go1.x
+      SamResourceId: CreateCategory
+    Properties:
+      CodeUri: CreateCategory
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Method: post
+            Path: /categories
+            RestApiId:
+              Ref: Api
+      Policies:
+      - AWSLambdaBasicExecutionRole
+      - DynamoDBCrudPolicy:
+          TableName:
+            Fn::ImportValue: Loopit-DynamoTableName
+  GetAllCategories:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: go1.x
+      SamResourceId: GetAllCategories
+    Properties:
+      CodeUri: GetAllCategories
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Method: get
+            Path: /categories
+            RestApiId:
+              Ref: Api
+      Policies:
+      - AWSLambdaBasicExecutionRole
+      - DynamoDBCrudPolicy:
+          TableName:
+            Fn::ImportValue: Loopit-DynamoTableName
+  UpdateCategory:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: go1.x
+      SamResourceId: UpdateCategory
+    Properties:
+      CodeUri: UpdateCategory
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Method: put
+            Path: /categories/{id}
+            RestApiId:
+              Ref: Api
+      Policies:
+      - AWSLambdaBasicExecutionRole
+      - DynamoDBCrudPolicy:
+          TableName:
+            Fn::ImportValue: Loopit-DynamoTableName
+  DeleteCategory:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: go1.x
+      SamResourceId: DeleteCategory
+    Properties:
+      CodeUri: DeleteCategory
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Method: delete
+            Path: /categories/{id}
+            RestApiId:
+              Ref: Api
+      Policies:
+      - AWSLambdaBasicExecutionRole
+      - DynamoDBCrudPolicy:
+          TableName:
+            Fn::ImportValue: Loopit-DynamoTableName
