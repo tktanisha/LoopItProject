@@ -33,7 +33,7 @@ func init() {
     productRepo := product_repo.NewProductDBRepo(dynamo,categoryRepo,userRepo)
     orderRepo := order_repo.NewOrderDBRepo(dynamo,productRepo)
 
-    feedbackService = feedback_service.NewFeedbackService(feedbackRepo, productRepo, orderRepo, nil)
+    feedbackService = feedback_service.NewFeedbackService(feedbackRepo, productRepo, orderRepo)
 }
 
 func Handler(ctx context.Context, event events.APIGatewayProxyRequest, userCtx *models.UserContext) (events.APIGatewayProxyResponse, error) {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 
+	"loopit/internal/api/middleware"
 	"loopit/internal/db"
 	"loopit/internal/models"
 	"loopit/internal/repository/lender_repo"
@@ -19,32 +20,32 @@ var userService user_service.UserServiceInterface
 var lenderRepo lender_repo.LenderRepo
 
 func init() {
-    dynamo, err := db.ConnectDynamo()
-    if err != nil {
-        panic("Failed to connect to DynamoDB: " + err.Error())
-    }
-    userRepo := user_repo.NewUserDBRepo(dynamo, lenderRepo)
-    userService = user_service.NewUserService(userRepo)
+	dynamo, err := db.ConnectDynamo()
+	if err != nil {
+		panic("Failed to connect to DynamoDB: " + err.Error())
+	}
+	userRepo := user_repo.NewUserDBRepo(dynamo, lenderRepo)
+	userService = user_service.NewUserService(userRepo)
 }
 
-func Handler(ctx context.Context, event events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-    filters := models.UserFilter{
-        Search:    event.QueryStringParameters["search"],
-        Role:      event.QueryStringParameters["role"],
-        SocietyID: event.QueryStringParameters["society_id"],
-    }
+func Handler(ctx context.Context, event events.APIGatewayProxyRequest, userCtx *models.UserContext) (events.APIGatewayProxyResponse, error) {
+	filters := models.UserFilter{
+		Search:    event.QueryStringParameters["search"],
+		Role:      event.QueryStringParameters["role"],
+		SocietyID: event.QueryStringParameters["society_id"],
+	}
 
-    users, err := userService.GetAllUsers(filters)
-    if err != nil {
-        return response.LambdaResponse(http.StatusInternalServerError, nil, "Failed to fetch users"), nil
-    }
+	users, err := userService.GetAllUsers(filters)
+	if err != nil {
+		return response.LambdaResponse(http.StatusInternalServerError, nil, "Failed to fetch users"), nil
+	}
 
-    return response.LambdaResponse(http.StatusOK, map[string]interface{}{
-        "status": true,
-        "users":  users,
-    }, ""), nil
+	return response.LambdaResponse(http.StatusOK, map[string]interface{}{
+		"status": true,
+		"users":  users,
+	}, ""), nil
 }
 
 func main() {
-    lambda.Start(Handler)
+	lambda.Start(middleware.WithCORS(middleware.WithAuth(Handler)))
 }

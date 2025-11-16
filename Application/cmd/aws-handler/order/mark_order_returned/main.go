@@ -35,14 +35,14 @@ func init() {
     userRepo := user_repo.NewUserDBRepo(dynamo,lenderRepo)
     productRepo := product_repo.NewProductDBRepo(dynamo,categoryRepo,userRepo)
     orderRepo := order_repo.NewOrderDBRepo(dynamo,productRepo)
-    returnRepo := return_request_repo.NewReturnRequestDBRepo(dynamo,nil)
+    returnRepo := return_request_repo.NewReturnRequestDBRepo(dynamo)
 
-    orderService = order_service.NewOrderService(orderRepo, returnRepo, productRepo, nil)
+    orderService = order_service.NewOrderService(orderRepo, returnRepo, productRepo)
 }
 
 func Handler(ctx context.Context, event events.APIGatewayProxyRequest, userCtx *models.UserContext) (events.APIGatewayProxyResponse, error) {
     orderIDStr := event.PathParameters["orderId"]
-    var orderID int
+    var orderID int64
     if _, err := fmt.Sscanf(orderIDStr, "%d", &orderID); err != nil {
         return response.LambdaResponse(http.StatusBadRequest, nil, "Invalid order ID"), nil
     }

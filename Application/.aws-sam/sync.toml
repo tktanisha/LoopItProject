@@ -3,26 +3,4 @@
 [sync_state]
 dependency_layer = true
 
-[resource_sync_states."ZipFunctionSyncFlow:Login"]
-hash = "3d7a7d104e9fd0b5420ee2900ae44444e41961809d8faa13c8f761b0882ecd06"
-sync_time = "2025-11-16T12:41:04.770625+00:00"
-
-[resource_sync_states."ZipFunctionSyncFlow:DeleteCategory"]
-hash = "829e16bc8faefdf5fc299e2e4e340ac466729918c5dd869f79de3c652eb2f4c8"
-sync_time = "2025-11-16T12:41:11.916896+00:00"
-
-[resource_sync_states."ZipFunctionSyncFlow:GetAllCategories"]
-hash = "726ca4200dd7161aedc8eff626f0391b48e7418a8230310446756ce8f419a901"
-sync_time = "2025-11-16T12:41:12.455290+00:00"
-
-[resource_sync_states."ZipFunctionSyncFlow:CreateCategory"]
-hash = "03c841a0214b82cb19f4b27ba027413ba03846159184d658582ae2899afe783c"
-sync_time = "2025-11-16T12:41:14.953867+00:00"
-
-[resource_sync_states."ZipFunctionSyncFlow:UpdateCategory"]
-hash = "8cd9354983eeddfc5978393d0f3622b7ba4ed627e7a908ff0ac6681b61fecc11"
-sync_time = "2025-11-16T12:41:14.992917+00:00"
-
-[resource_sync_states."ZipFunctionSyncFlow:register"]
-hash = "b9af768d8ca51be760714252e8a2cbdd956aabcc4ccc5f8f5a4ab84cd5e77187"
-sync_time = "2025-11-16T12:41:15.455422+00:00"
+[resource_sync_states]

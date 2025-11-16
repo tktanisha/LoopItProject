@@ -2,16 +2,14 @@ package lender_repo
 
 import (
 	"loopit/internal/db"
-	"loopit/pkg/logger"
 )
 
 type LenderDBRepo struct {
 	db  *db.DynamoClient
-	log logger.LoggerInterface
 }
 
-func NewLenderDBRepo(db *db.DynamoClient, log logger.LoggerInterface) *LenderDBRepo {
-	return &LenderDBRepo{db: db, log: log}
+func NewLenderDBRepo(db *db.DynamoClient) *LenderDBRepo {
+	return &LenderDBRepo{db: db,}
 }
 
 // // FindAll returns all lenders

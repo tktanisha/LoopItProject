@@ -11,7 +11,7 @@ import (
 	"loopit/internal/repository/category_repo"
 	"loopit/internal/repository/order_repo"
 	"loopit/internal/repository/product_repo"
-	"loopit/pkg/logger"
+
 	"time"
 )
 
@@ -20,7 +20,6 @@ type BuyerRequestService struct {
 	productRepo      product_repo.ProductRepo
 	orderRepo        order_repo.OrderRepo
 	categoryRepo     category_repo.CategoryRepo
-	log              logger.LoggerInterface
 }
 
 func NewBuyerRequestService(
@@ -28,34 +27,28 @@ func NewBuyerRequestService(
 	productRepo product_repo.ProductRepo,
 	orderRepo order_repo.OrderRepo,
 	categoryRepo category_repo.CategoryRepo,
-	log logger.LoggerInterface,
 ) BuyerRequestServiceInterface {
 	return &BuyerRequestService{
 		buyerRequestRepo: buyerReqRepo,
 		productRepo:      productRepo,
 		orderRepo:        orderRepo,
 		categoryRepo:     categoryRepo,
-		log:              log,
 	}
 }
 
 func (s *BuyerRequestService) CreateBuyerRequest(productID int64, userCtx *models.UserContext) error {
-	s.log.Info(fmt.Sprintf("CreateBuyerRequest called by user %d for product %d", userCtx.ID, productID))
 
 	// Step 1: Validate the product
 	product, err := s.productRepo.FindByID(productID)
 	if err != nil {
-		s.log.Warning(fmt.Sprintf("Product %d not found", productID))
 		return errors.New("product not found")
 	}
 	if !product.Product.IsAvailable {
-		s.log.Warning(fmt.Sprintf("Product %d is not available", productID))
 		return errors.New("product not available")
 	}
 
 	// Step 2: Prevent lender from requesting their own product
 	if product.Product.LenderID == userCtx.ID {
-		s.log.Warning(fmt.Sprintf("User %d attempted to request their own product %d", userCtx.ID, productID))
 		return errors.New("lender cannot create a buying request for their own product")
 	}
 
@@ -66,13 +59,11 @@ func (s *BuyerRequestService) CreateBuyerRequest(productID int64, userCtx *model
 	// Pass productID and statuses to the repository for efficient filtering
 	existingRequests, err := s.buyerRequestRepo.GetAllBuyerRequests(prodIDPtr, statuses)
 	if err != nil {
-		s.log.Error(fmt.Sprintf("Failed to fetch existing requests for user %d, error: %v", userCtx.ID, err))
 		return err
 	}
 
 	for _, req := range existingRequests {
 		if req.RequestedBy == userCtx.ID {
-			s.log.Warning(fmt.Sprintf("Duplicate buyer request found for user %d on product %d", userCtx.ID, productID))
 			return errors.New("a pending or approved request already exists")
 		}
 	}
@@ -86,30 +77,24 @@ func (s *BuyerRequestService) CreateBuyerRequest(productID int64, userCtx *model
 	}
 
 	if err := s.buyerRequestRepo.CreateBuyerRequest(newRequest); err != nil {
-		s.log.Error(fmt.Sprintf("Failed to create buyer request for user %d, product %d, error: %v", userCtx.ID, productID, err))
 		return err
 	}
 
-	s.log.Info(fmt.Sprintf("Buyer request created successfully for user %d, product %d", userCtx.ID, productID))
 	return nil
 }
 
 func (s *BuyerRequestService) UpdateBuyerRequestStatus(requestID int64, updatedStatus br_status.Status, userCtx *models.UserContext) error {
-	s.log.Info(fmt.Sprintf("UpdateBuyerRequestStatus called by user %d for request %d to status %s", userCtx.ID, requestID, updatedStatus.String()))
 
 	if userCtx.Role != enums.RoleLender {
-		s.log.Warning(fmt.Sprintf("Unauthorized status update attempt by user %d", userCtx.ID))
 		return errors.New("unauthorized: only lenders can update request status")
 	}
 
 	if updatedStatus != br_status.Approved && updatedStatus != br_status.Rejected {
-		s.log.Warning(fmt.Sprintf("Invalid status %s attempted for request %d", updatedStatus.String(), requestID))
 		return errors.New("invalid status: only 'approved' or 'rejected' allowed")
 	}
 
 	allRequests, err := s.buyerRequestRepo.GetAllBuyerRequests(nil, nil)
 	if err != nil {
-		s.log.Error(fmt.Sprintf("Failed to fetch requests for status update by user %d, error: %v", userCtx.ID, err))
 		return err
 	}
 
@@ -121,28 +106,23 @@ func (s *BuyerRequestService) UpdateBuyerRequestStatus(requestID int64, updatedS
 		}
 	}
 	if req == nil {
-		s.log.Warning(fmt.Sprintf("Buyer request %d not found", requestID))
 		return errors.New("buyer request not found")
 	}
 
 	if updatedStatus == br_status.Rejected {
 		if err := s.buyerRequestRepo.UpdateStatusBuyerRequest(requestID, br_status.Rejected.String()); err != nil {
-			s.log.Error(fmt.Sprintf("Failed to reject buyer request %d, error: %v", requestID, err))
 			return err
 		}
-		s.log.Info(fmt.Sprintf("Buyer request %d rejected", requestID))
 		return nil
 	}
 
 	product, err := s.productRepo.FindByID(req.ProductID)
 	if err != nil {
-		s.log.Error(fmt.Sprintf("Product %d not found while approving request %d", req.ProductID, requestID))
 		return errors.New("product not found")
 	}
 
 	category, err := s.categoryRepo.FindByID(product.Category.ID)
 	if err != nil {
-		s.log.Error(fmt.Sprintf("Category %d not found for product %d, request %d", product.Category.ID, req.ProductID, requestID))
 		return errors.New("category not found")
 	}
 
@@ -158,30 +138,24 @@ func (s *BuyerRequestService) UpdateBuyerRequestStatus(requestID int64, updatedS
 	}
 
 	if err := s.orderRepo.CreateOrder(newOrder); err != nil {
-		s.log.Error(fmt.Sprintf("Failed to create order for request %d, error: %v", requestID, err))
 		return err
 	}
 
 	if err := s.buyerRequestRepo.UpdateStatusBuyerRequest(requestID, br_status.Approved.String()); err != nil {
-		s.log.Error(fmt.Sprintf("Failed to update buyer request %d to approved, error: %v", requestID, err))
 		return err
 	}
 
-	s.log.Info(fmt.Sprintf("Buyer request %d approved and order created", requestID))
 	return nil
 }
 
 func (s *BuyerRequestService) GetAllBuyerRequests(productID *int64, filterStatuses []string) ([]models.BuyingRequest, error) {
-	s.log.Info(fmt.Sprintf("Fetching buyer requests with filters - productID: %v, statuses: %v", productID, filterStatuses))
 
 	// Pass filters directly to the repository
 	requests, err := s.buyerRequestRepo.GetAllBuyerRequests(productID, filterStatuses)
 	if err != nil {
-		s.log.Error(fmt.Sprintf("Failed to fetch buyer requests, error: %v", err))
 		return nil, err
 	}
 
-	s.log.Info(fmt.Sprintf("Found %d buyer requests from service", len(requests)))
 	fmt.Println("request=", requests)
 	return requests, nil
 }

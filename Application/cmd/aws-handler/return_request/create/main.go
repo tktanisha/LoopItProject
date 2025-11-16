@@ -32,9 +32,9 @@ func init() {
 
     productRepo := product_repo.NewProductDBRepo(dynamo,categoryRepo,userRepo)
     orderRepo := order_repo.NewOrderDBRepo(dynamo,productRepo)
-    rrRepo := return_request_repo.NewReturnRequestDBRepo(dynamo,nil)
+    rrRepo := return_request_repo.NewReturnRequestDBRepo(dynamo)
 
-    returnRequestService = return_request_service.NewReturnRequestService(orderRepo, productRepo, rrRepo, nil)
+    returnRequestService = return_request_service.NewReturnRequestService(orderRepo, productRepo, rrRepo)
 }
 
 func Handler(ctx context.Context, event events.APIGatewayProxyRequest, userCtx *models.UserContext) (events.APIGatewayProxyResponse, error) {

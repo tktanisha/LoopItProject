@@ -178,9 +178,9 @@ package order_repo
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"loopit/internal/db"
-	"loopit/internal/enums/order_status"
 	"loopit/internal/models"
 	"loopit/internal/repository/product_repo"
 	"time"
@@ -192,215 +192,189 @@ import (
 )
 
 type OrderDBRepo struct {
-	db          *db.DynamoClient
-	productRepo product_repo.ProductRepo
+    db          *db.DynamoClient
+    productRepo product_repo.ProductRepo
 }
 
 func NewOrderDBRepo(db *db.DynamoClient, productRepo product_repo.ProductRepo) *OrderDBRepo {
-	return &OrderDBRepo{
-		db:          db,
-		productRepo: productRepo,
-	}
+    return &OrderDBRepo{
+        db:          db,
+        productRepo: productRepo,
+    }
 }
 
-func (r *OrderDBRepo) CreateOrder(o models.Order) error {
-	o.ID = time.Now().UnixNano()
-	o.CreatedAt = time.Now()
+// ✅ CreateOrder
+func (r *OrderDBRepo) CreateOrder(order models.Order) error {
+    order.ID = time.Now().UnixNano()
+    order.CreatedAt = time.Now()
 
-	table := r.db.Table
+    // Fetch lender ID from product
+    product, err := r.productRepo.FindByID(order.ProductID)
+    if err != nil {
+        return fmt.Errorf("failed to fetch product for lender info: %w", err)
+    }
+    lenderID := product.Product.LenderID
 
-	// lender fetch
-	p, err := r.productRepo.FindByID(o.ProductID)
-	if err != nil {
-		return fmt.Errorf("could not find lender for product")
-	}
-	lenderID := p.Product.LenderID
+    base := map[string]types.AttributeValue{
+        "ID":             &types.AttributeValueMemberN{Value: fmt.Sprintf("%d", order.ID)},
+        "ProductID":      &types.AttributeValueMemberN{Value: fmt.Sprintf("%d", order.ProductID)},
+        "UserID":         &types.AttributeValueMemberN{Value: fmt.Sprintf("%d", order.UserID)},
+        "StartDate":      &types.AttributeValueMemberS{Value: order.StartDate.Format(time.RFC3339)},
+        "EndDate":        &types.AttributeValueMemberS{Value: order.EndDate.Format(time.RFC3339)},
+        "TotalAmount":    &types.AttributeValueMemberN{Value: fmt.Sprintf("%f", order.TotalAmount)},
+        "SecurityAmount": &types.AttributeValueMemberN{Value: fmt.Sprintf("%f", order.SecurityAmount)},
+        "Status":         &types.AttributeValueMemberS{Value: order.Status.String()},
+        "CreatedAt":      &types.AttributeValueMemberS{Value: order.CreatedAt.Format(time.RFC3339)},
+    }
 
-	skID := fmt.Sprintf("ID#%d", o.ID)
-	skUser := fmt.Sprintf("ORDER#ID#%d", o.ID)
-	skLender := fmt.Sprintf("ORDER#ID#%d", o.ID)
+    // Items for access patterns
+    items := []map[string]types.AttributeValue{
+        mergeMap(base, map[string]types.AttributeValue{
+            "pk": &types.AttributeValueMemberS{Value: fmt.Sprintf("USER#%d", order.UserID)},
+            "sk": &types.AttributeValueMemberS{Value: fmt.Sprintf("ORDER#ID#%d", order.ID)},
+        }),
+        mergeMap(base, map[string]types.AttributeValue{
+            "pk": &types.AttributeValueMemberS{Value: fmt.Sprintf("LENDER#%d", lenderID)},
+            "sk": &types.AttributeValueMemberS{Value: fmt.Sprintf("ORDER#ID#%d", order.ID)},
+        }),
+    }
 
-	item := map[string]interface{}{
-		"ID":             o.ID,
-		"ProductID":      o.ProductID,
-		"UserID":         o.UserID,
-		"StartDate":      o.StartDate.Format(time.RFC3339),
-		"EndDate":        o.EndDate.Format(time.RFC3339),
-		"TotalAmount":    o.TotalAmount,
-		"SecurityAmount": o.SecurityAmount,
-		"Status":         o.Status.String(),
-		"CreatedAt":      o.CreatedAt.Format(time.RFC3339),
-	}
-
-	entries := []struct{ PK, SK string }{
-		{"ORDER", skID},
-		{fmt.Sprintf("USER#%d", o.UserID), skUser},
-		{fmt.Sprintf("LENDER#%d", lenderID), skLender},
-	}
-
-	for _, e := range entries {
-
-		keys, err := attributevalue.MarshalMap(map[string]string{
-			"pk": e.PK,
-			"sk": e.SK,
-		})
-		if err != nil {
-			return err
-		}
-
-		body, err := attributevalue.MarshalMap(item)
-		if err != nil {
-			return err
-		}
-
-		for k, v := range body {
-			keys[k] = v
-		}
-
-		_, err = r.db.Client.PutItem(context.TODO(), &dynamodb.PutItemInput{
-			TableName: aws.String(table),
-			Item:      keys,
-		})
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
+    for _, item := range items {
+        _, err := r.db.Client.PutItem(context.TODO(), &dynamodb.PutItemInput{
+            TableName: aws.String(r.db.Table),
+            Item:      item,
+        })
+        if err != nil {
+            return fmt.Errorf("failed to create order item: %w", err)
+        }
+    }
+    return nil
 }
 
-func (r *OrderDBRepo) GetOrderByID(id int64) (*models.Order, error) {
-	out, err := r.db.Client.GetItem(context.TODO(), &dynamodb.GetItemInput{
-		TableName: aws.String(r.db.Table),
-		Key: map[string]types.AttributeValue{
-			"pk": &types.AttributeValueMemberS{Value: "ORDER"},
-			"sk": &types.AttributeValueMemberS{Value: fmt.Sprintf("ID#%d", id)},
-		},
-	})
+// ✅ UpdateOrderStatus
+func (r *OrderDBRepo) UpdateOrderStatus(orderID int64, newStatus string) error {
+    // Update both copies (USER and LENDER)
+    // First, find the order to get UserID and LenderID
+    order, err := r.GetOrderByID(orderID)
+    if err != nil {
+        return err
+    }
+    product, _ := r.productRepo.FindByID(order.ProductID)
+    lenderID := product.Product.LenderID
 
-	if err != nil || out.Item == nil {
-		return nil, fmt.Errorf("order not found")
-	}
+    keys := []map[string]types.AttributeValue{
+        {"pk": &types.AttributeValueMemberS{Value: fmt.Sprintf("USER#%d", order.UserID)}, "sk": &types.AttributeValueMemberS{Value: fmt.Sprintf("ORDER#ID#%d", orderID)}},
+        {"pk": &types.AttributeValueMemberS{Value: fmt.Sprintf("LENDER#%d", lenderID)}, "sk": &types.AttributeValueMemberS{Value: fmt.Sprintf("ORDER#ID#%d", orderID)}},
+    }
 
-	var o models.Order
-	if err := attributevalue.UnmarshalMap(out.Item, &o); err != nil {
-		return nil, err
-	}
-
-	return &o, nil
+    for _, key := range keys {
+        _, err := r.db.Client.UpdateItem(context.TODO(), &dynamodb.UpdateItemInput{
+            TableName: aws.String(r.db.Table),
+            Key:       key,
+            UpdateExpression: aws.String("SET #s = :status"),
+            ExpressionAttributeNames: map[string]string{"#s": "Status"},
+            ExpressionAttributeValues: map[string]types.AttributeValue{
+                ":status": &types.AttributeValueMemberS{Value: newStatus},
+            },
+        })
+        if err != nil {
+            return fmt.Errorf("failed to update order status: %w", err)
+        }
+    }
+    return nil
 }
 
-func (r *OrderDBRepo) GetOrderHistory(userID int64, statuses []string) ([]models.Order, error) {
-	pk := fmt.Sprintf("USER#%d", userID)
+// ✅ GetOrderHistory (by user)
+func (r *OrderDBRepo) GetOrderHistory(userID int64, filterStatuses []string) ([]*models.Order, error) {
+    out, err := r.db.Client.Query(context.TODO(), &dynamodb.QueryInput{
+        TableName:              aws.String(r.db.Table),
+        KeyConditionExpression: aws.String("pk = :pk AND begins_with(sk, :skPrefix)"),
+        ExpressionAttributeValues: map[string]types.AttributeValue{
+            ":pk":       &types.AttributeValueMemberS{Value: fmt.Sprintf("USER#%d", userID)},
+            ":skPrefix": &types.AttributeValueMemberS{Value: "ORDER#"},
+        },
+    })
+    if err != nil {
+        return nil, fmt.Errorf("failed to query order history: %w", err)
+    }
 
-	out, err := r.db.Client.Query(context.TODO(), &dynamodb.QueryInput{
-		TableName:              aws.String(r.db.Table),
-		KeyConditionExpression: aws.String("pk = :pk AND begins_with(sk, :p)"),
-		ExpressionAttributeValues: map[string]types.AttributeValue{
-			":pk": &types.AttributeValueMemberS{Value: pk},
-			":p":  &types.AttributeValueMemberS{Value: "ORDER#ID#"},
-		},
-	})
+    var orders []*models.Order
+    if err := attributevalue.UnmarshalListOfMaps(out.Items, &orders); err != nil {
+        return nil, err
+    }
 
-	if err != nil {
-		return nil, err
-	}
-
-	var orders []models.Order
-	if err := attributevalue.UnmarshalListOfMaps(out.Items, &orders); err != nil {
-		return nil, err
-	}
-
-	// status filter
-	if len(statuses) > 0 {
-		set := map[string]bool{}
-		for _, s := range statuses {
-			set[s] = true
-		}
-
-		tmp := []models.Order{}
-		for _, o := range orders {
-			if set[o.Status.String()] {
-				tmp = append(tmp, o)
-			}
-		}
-		return tmp, nil
-	}
-
-	return orders, nil
+    // Filter by status in memory
+    if len(filterStatuses) > 0 {
+        var filtered []*models.Order
+        statusMap := make(map[string]bool)
+        for _, s := range filterStatuses {
+            statusMap[s] = true
+        }
+        for _, o := range orders {
+            if statusMap[o.Status.String()] {
+                filtered = append(filtered, o)
+            }
+        }
+        return filtered, nil
+    }
+    return orders, nil
 }
 
-func (r *OrderDBRepo) GetLenderOrders(lenderID int64) ([]models.Order, error) {
-	pk := fmt.Sprintf("LENDER#%d", lenderID)
+// ✅ GetLenderOrders
+func (r *OrderDBRepo) GetLenderOrders(userID int64) ([]*models.Order, error) {
+    out, err := r.db.Client.Query(context.TODO(), &dynamodb.QueryInput{
+        TableName:              aws.String(r.db.Table),
+        KeyConditionExpression: aws.String("pk = :pk AND begins_with(sk, :skPrefix)"),
+        ExpressionAttributeValues: map[string]types.AttributeValue{
+            ":pk":       &types.AttributeValueMemberS{Value: fmt.Sprintf("LENDER#%d", userID)},
+            ":skPrefix": &types.AttributeValueMemberS{Value: "ORDER#"},
+        },
+    })
+    if err != nil {
+        return nil, fmt.Errorf("failed to query lender orders: %w", err)
+    }
 
-	out, err := r.db.Client.Query(context.TODO(), &dynamodb.QueryInput{
-		TableName:              aws.String(r.db.Table),
-		KeyConditionExpression: aws.String("pk = :pk AND begins_with(sk, :p)"),
-		ExpressionAttributeValues: map[string]types.AttributeValue{
-			":pk": &types.AttributeValueMemberS{Value: pk},
-			":p":  &types.AttributeValueMemberS{Value: "ORDER#ID#"},
-		},
-	})
-
-	if err != nil {
-		return nil, err
-	}
-
-	var orders []models.Order
-	if err := attributevalue.UnmarshalListOfMaps(out.Items, &orders); err != nil {
-		return nil, err
-	}
-
-	return orders, nil
+    var orders []*models.Order
+    if err := attributevalue.UnmarshalListOfMaps(out.Items, &orders); err != nil {
+        return nil, err
+    }
+    return orders, nil
 }
 
-func (r *OrderDBRepo) UpdateOrderStatus(id int64, newStatus string) error {
-	o, err := r.GetOrderByID(id)
-	if err != nil {
-		return err
-	}
+// ✅ GetOrderByID
+func (r *OrderDBRepo) GetOrderByID(orderID int64) (*models.Order, error) {
+    // Query USER partition first (or scan both)
+    out, err := r.db.Client.Query(context.TODO(), &dynamodb.QueryInput{
+        TableName:              aws.String(r.db.Table),
+        KeyConditionExpression: aws.String("begins_with(sk, :skPrefix)"),
+        ExpressionAttributeValues: map[string]types.AttributeValue{
+            ":skPrefix": &types.AttributeValueMemberS{Value: fmt.Sprintf("ORDER#ID#%d", orderID)},
+        },
+    })
+    if err != nil || len(out.Items) == 0 {
+        return nil, errors.New("order not found")
+    }
 
-	p, err := r.productRepo.FindByID(o.ProductID)
-	if err != nil {
-		return err
-	}
-
-	// remove old items
-	r.DeleteOrder(id, o.UserID, p.Product.LenderID)
-
-	// modify
-	o.Status, _ = order_status.ParseStatus(newStatus)
-
-	// recreate all rows
-	return r.CreateOrder(o)
+    var order models.Order
+    if err := attributevalue.UnmarshalMap(out.Items[0], &order); err != nil {
+        return nil, err
+    }
+    return &order, nil
 }
 
-func (r *OrderDBRepo) DeleteOrder(id, userID, lenderID int64) error {
-	sks := []string{
-		fmt.Sprintf("ID#%d", id),
-		fmt.Sprintf("ORDER#ID#%d", id),
-		fmt.Sprintf("ORDER#ID#%d", id),
-	}
-	pks := []string{
-		"ORDER",
-		fmt.Sprintf("USER#%d", userID),
-		fmt.Sprintf("LENDER#%d", lenderID),
-	}
-
-	for i := range sks {
-		_, err := r.db.Client.DeleteItem(context.TODO(), &dynamodb.DeleteItemInput{
-			TableName: aws.String(r.db.Table),
-			Key: map[string]types.AttributeValue{
-				"pk": &types.AttributeValueMemberS{Value: pks[i]},
-				"sk": &types.AttributeValueMemberS{Value: sks[i]},
-			},
-		})
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
+// ✅ Save (no-op)
+func (r *OrderDBRepo) Save() error {
+    return nil
 }
 
-func (r *OrderDBRepo) Save() error { return nil }
+// Helper
+func mergeMap(base, extra map[string]types.AttributeValue) map[string]types.AttributeValue {
+    merged := make(map[string]types.AttributeValue)
+    for k, v := range base {
+        merged[k] = v
+    }
+    for k, v := range extra {
+        merged[k] = v
+    }
+    return merged
+}

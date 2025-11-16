@@ -11,13 +11,12 @@ import (
 	"loopit/internal/models"
 	"loopit/internal/repository/user_repo"
 	"loopit/internal/utils"
-	"loopit/pkg/logger"
+	
 	//"time"
 )
 
 type AuthService struct {
 	userRepo user_repo.UserRepo
-	log      logger.LoggerInterface
 }
 
 func NewAuthService(repo user_repo.UserRepo) AuthServiceInterface {

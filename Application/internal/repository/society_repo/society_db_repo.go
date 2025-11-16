@@ -125,11 +125,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"time"
 
 	"loopit/internal/db"
 	"loopit/internal/models"
-	"loopit/pkg/logger"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
@@ -139,7 +139,6 @@ import (
 
 type SocietyDBRepo struct {
     db  *db.DynamoClient
-    log logger.LoggerInterface
 }
 
 func NewSocietyDBRepo(db *db.DynamoClient) *SocietyDBRepo {
@@ -190,6 +189,7 @@ func (r *SocietyDBRepo) FindAll() ([]models.Society, error) {
 
 // ✅ FindByID
 func (r *SocietyDBRepo) FindByID(id int64) (models.Society, error) {
+    log.Print("start by id")
     key := map[string]types.AttributeValue{
         "pk": &types.AttributeValueMemberS{Value: "SOCIETY"},
         "sk": &types.AttributeValueMemberS{Value: fmt.Sprintf("ID#%d", id)},
@@ -210,11 +210,13 @@ func (r *SocietyDBRepo) FindByID(id int64) (models.Society, error) {
     if err := attributevalue.UnmarshalMap(out.Item, &society); err != nil {
         return models.Society{}, err
     }
+    log.Print("end in id")
     return society, nil
 }
 
 // ✅ Update Society
 func (r *SocietyDBRepo) Update(society models.Society) error {
+    log.Print("start in update")
     _, err := r.db.Client.UpdateItem(context.TODO(), &dynamodb.UpdateItemInput{
         TableName: aws.String(r.db.Table),
         Key: map[string]types.AttributeValue{
@@ -231,6 +233,7 @@ func (r *SocietyDBRepo) Update(society models.Society) error {
             ":pincode": &types.AttributeValueMemberS{Value: society.Pincode},
         },
     })
+    log.Print("end in update")
     return err
 }
 

@@ -119,11 +119,10 @@ package return_request_repo
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"loopit/internal/db"
-	"loopit/internal/enums/return_request_status"
 	"loopit/internal/models"
-	"loopit/pkg/logger"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -132,172 +131,120 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 )
 
+// Struct
 type ReturnRequestDBRepo struct {
-	db  *db.DynamoClient
-	log logger.LoggerInterface
+    db *db.DynamoClient
 }
 
-func NewReturnRequestDBRepo(db *db.DynamoClient, log logger.LoggerInterface) *ReturnRequestDBRepo {
-	return &ReturnRequestDBRepo{db: db, log: log}
+// Constructor
+func NewReturnRequestDBRepo(db *db.DynamoClient) *ReturnRequestDBRepo {
+    return &ReturnRequestDBRepo{db: db}
 }
 
 func (r *ReturnRequestDBRepo) CreateReturnRequest(req models.ReturnRequest) error {
-	req.ID = time.Now().UnixNano()
-	req.CreatedAt = time.Now()
+    req.ID = time.Now().UnixNano()
+    req.CreatedAt = time.Now()
 
-	table := r.db.Table
+    item := map[string]types.AttributeValue{
+        "pk":        &types.AttributeValueMemberS{Value: "RETURNREQUEST"},
+        "sk":        &types.AttributeValueMemberS{Value: fmt.Sprintf("ID#%d", req.ID)},
+        "ID":        &types.AttributeValueMemberN{Value: fmt.Sprintf("%d", req.ID)},
+        "OrderID":   &types.AttributeValueMemberN{Value: fmt.Sprintf("%d", req.OrderID)},
+        "RequestedBy": &types.AttributeValueMemberN{Value: fmt.Sprintf("%d", req.RequestedBy)},
+        "Status":    &types.AttributeValueMemberS{Value: req.Status.String()},
+        "CreatedAt": &types.AttributeValueMemberS{Value: req.CreatedAt.Format(time.RFC3339)},
+    }
 
-	// --- KEY GENERATION ---
-	skID := fmt.Sprintf("ID#%d", req.ID)
-
-	pkOrder := fmt.Sprintf("ORDER#%d", req.OrderID)
-	skOrder := fmt.Sprintf("RETURNREQ#ID#%d", req.ID)
-
-	pkBase := "RETURNREQUEST"
-
-	// user indexing only for pending return requests
-	pkUser := fmt.Sprintf("USER#%d", req.RequestedBy)
-	skUser := fmt.Sprintf("RETURNREQ#ID#%d", req.ID)
-
-	// Body
-	item := map[string]interface{}{
-		"ID":          req.ID,
-		"OrderID":     req.OrderID,
-		"RequestedBy": req.RequestedBy,
-		"Status":      req.Status.String(),
-		"CreatedAt":   req.CreatedAt.Format(time.RFC3339),
-	}
-
-	records := []struct {
-		PK string
-		SK string
-	}{
-		{pkBase, skID},     // Get by ID
-		{pkOrder, skOrder}, // Get all by order
-	}
-
-	// Only store in USER#index if pending
-	if req.Status == return_request_status.Pending {
-		records = append(records, struct{ PK, SK string }{pkUser, skUser})
-	}
-
-	for _, rec := range records {
-		key, err := attributevalue.MarshalMap(map[string]string{
-			"pk": rec.PK,
-			"sk": rec.SK,
-		})
-		if err != nil {
-			return err
-		}
-
-		body, err := attributevalue.MarshalMap(item)
-		if err != nil {
-			return err
-		}
-
-		for k, v := range body {
-			key[k] = v
-		}
-
-		_, err = r.db.Client.PutItem(context.TODO(), &dynamodb.PutItemInput{
-			TableName: aws.String(table),
-			Item:      key,
-		})
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (r *ReturnRequestDBRepo) GetReturnRequestByID(id int64) (models.ReturnRequest, error) {
-	pk := "RETURNREQUEST"
-	sk := fmt.Sprintf("ID#%d", id)
-
-	out, err := r.db.Client.GetItem(context.TODO(), &dynamodb.GetItemInput{
-		TableName: aws.String(r.db.Table),
-		Key: map[string]types.AttributeValue{
-			"pk": &types.AttributeValueMemberS{Value: pk},
-			"sk": &types.AttributeValueMemberS{Value: sk},
-		},
-	})
-
-	if err != nil || out.Item == nil {
-		return models.ReturnRequest{}, fmt.Errorf("return request not found")
-	}
-
-	var req models.ReturnRequest
-	if err := attributevalue.UnmarshalMap(out.Item, &req); err != nil {
-		return models.ReturnRequest{}, err
-	}
-
-	return req, nil
-}
-
-func (r *ReturnRequestDBRepo) GetAllReturnRequestsOfOrder(orderID int64) ([]models.ReturnRequest, error) {
-	pk := fmt.Sprintf("ORDER#%d", orderID)
-
-	out, err := r.db.Client.Query(context.TODO(), &dynamodb.QueryInput{
-		TableName:              aws.String(r.db.Table),
-		KeyConditionExpression: aws.String("pk = :pk AND begins_with(sk, :prefix)"),
-		ExpressionAttributeValues: map[string]types.AttributeValue{
-			":pk":     &types.AttributeValueMemberS{Value: pk},
-			":prefix": &types.AttributeValueMemberS{Value: "RETURNREQ#ID#"},
-		},
-	})
-
-	if err != nil {
-		return nil, err
-	}
-
-	var list []models.ReturnRequest
-	err = attributevalue.UnmarshalListOfMaps(out.Items, &list)
-	return list, err
-}
-
-func (r *ReturnRequestDBRepo) GetPendingReturnRequestsForUser(userID int64) ([]models.ReturnRequest, error) {
-	pk := fmt.Sprintf("USER#%d", userID)
-
-	out, err := r.db.Client.Query(context.TODO(), &dynamodb.QueryInput{
-		TableName:              aws.String(r.db.Table),
-		KeyConditionExpression: aws.String("pk = :pk AND begins_with(sk, :prefix)"),
-		ExpressionAttributeValues: map[string]types.AttributeValue{
-			":pk":     &types.AttributeValueMemberS{Value: pk},
-			":prefix": &types.AttributeValueMemberS{Value: "RETURNREQ#ID#"},
-		},
-	})
-
-	if err != nil {
-		return nil, err
-	}
-
-	var reqs []models.ReturnRequest
-	err = attributevalue.UnmarshalListOfMaps(out.Items, &reqs)
-	return reqs, err
+    _, err := r.db.Client.PutItem(context.TODO(), &dynamodb.PutItemInput{
+        TableName: aws.String(r.db.Table),
+        Item:      item,
+    })
+    if err != nil {
+        return fmt.Errorf("failed to create return request: %w", err)
+    }
+    return nil
 }
 
 func (r *ReturnRequestDBRepo) UpdateReturnRequestStatus(id int64, newStatus string) error {
-	req, err := r.GetReturnRequestByID(id)
-	if err != nil {
-		return err
-	}
-
-	// Remove old USER index only if previously pending
-	if req.Status == return_request_status.Pending {
-		_, _ = r.db.Client.DeleteItem(context.TODO(), &dynamodb.DeleteItemInput{
-			TableName: aws.String(r.db.Table),
-			Key: map[string]types.AttributeValue{
-				"pk": &types.AttributeValueMemberS{Value: fmt.Sprintf("USER#%d", req.RequestedBy)},
-				"sk": &types.AttributeValueMemberS{Value: fmt.Sprintf("RETURNREQ#ID#%d", id)},
-			},
-		})
-	}
-
-	req.Status, _ = return_request_status.ParseStatus(newStatus)
-
-	// recreate entire record
-	return r.CreateReturnRequest(req)
+    _, err := r.db.Client.UpdateItem(context.TODO(), &dynamodb.UpdateItemInput{
+        TableName: aws.String(r.db.Table),
+        Key: map[string]types.AttributeValue{
+            "pk": &types.AttributeValueMemberS{Value: "RETURNREQUEST"},
+            "sk": &types.AttributeValueMemberS{Value: fmt.Sprintf("ID#%d", id)},
+        },
+        UpdateExpression: aws.String("SET #s = :status"),
+        ExpressionAttributeNames: map[string]string{
+            "#s": "Status",
+        },
+        ExpressionAttributeValues: map[string]types.AttributeValue{
+            ":status": &types.AttributeValueMemberS{Value: newStatus},
+        },
+    })
+    if err != nil {
+        return fmt.Errorf("failed to update return request status: %w", err)
+    }
+    return nil
 }
 
-func (r *ReturnRequestDBRepo) Save() error { return nil }
+func (r *ReturnRequestDBRepo) GetAllReturnRequests(filterStatuses []string) ([]models.ReturnRequest, error) {
+    out, err := r.db.Client.Query(context.TODO(), &dynamodb.QueryInput{
+        TableName:              aws.String(r.db.Table),
+        KeyConditionExpression: aws.String("pk = :pk"),
+        ExpressionAttributeValues: map[string]types.AttributeValue{
+            ":pk": &types.AttributeValueMemberS{Value: "RETURNREQUEST"},
+        },
+    })
+    if err != nil {
+        return nil, fmt.Errorf("failed to query return requests: %w", err)
+    }
+
+    var requests []models.ReturnRequest
+    if err := attributevalue.UnmarshalListOfMaps(out.Items, &requests); err != nil {
+        return nil, fmt.Errorf("failed to unmarshal return requests: %w", err)
+    }
+
+    // Filter by status in memory (since no GSI)
+    if len(filterStatuses) > 0 {
+        var filtered []models.ReturnRequest
+        statusMap := make(map[string]bool)
+        for _, s := range filterStatuses {
+            statusMap[s] = true
+        }
+        for _, rr := range requests {
+            if statusMap[rr.Status.String()] {
+                filtered = append(filtered, rr)
+            }
+        }
+        return filtered, nil
+    }
+
+    return requests, nil
+}
+
+func (r *ReturnRequestDBRepo) GetReturnRequestByID(id int64) (models.ReturnRequest, error) {
+    key := map[string]types.AttributeValue{
+        "pk": &types.AttributeValueMemberS{Value: "RETURNREQUEST"},
+        "sk": &types.AttributeValueMemberS{Value: fmt.Sprintf("ID#%d", id)},
+    }
+
+    out, err := r.db.Client.GetItem(context.TODO(), &dynamodb.GetItemInput{
+        TableName: aws.String(r.db.Table),
+        Key:       key,
+    })
+    if err != nil {
+        return models.ReturnRequest{}, fmt.Errorf("failed to get return request: %w", err)
+    }
+    if out.Item == nil {
+        return models.ReturnRequest{}, errors.New("return request not found")
+    }
+
+    var rr models.ReturnRequest
+    if err := attributevalue.UnmarshalMap(out.Item, &rr); err != nil {
+        return models.ReturnRequest{}, fmt.Errorf("failed to unmarshal return request: %w", err)
+    }
+    return rr, nil
+}
+
+func (r *ReturnRequestDBRepo) Save() error {
+	return nil
+}

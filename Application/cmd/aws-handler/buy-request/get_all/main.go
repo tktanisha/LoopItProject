@@ -40,7 +40,7 @@ func init() {
     productRepo := product_repo.NewProductDBRepo(dynamo,categoryRepo,userRepo)
     orderRepo := order_repo.NewOrderDBRepo(dynamo,productRepo)
 
-    buyerRequestService = buyer_request_service.NewBuyerRequestService(buyerReqRepo, productRepo, orderRepo, categoryRepo, nil)
+    buyerRequestService = buyer_request_service.NewBuyerRequestService(buyerReqRepo, productRepo, orderRepo, categoryRepo)
     productService = product_service.NewProductService(productRepo, userRepo)
 }
 

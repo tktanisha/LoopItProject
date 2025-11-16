@@ -5,6 +5,7 @@ package main
 // 	"encoding/json"
 // 	"net/http"
 
+// 	"loopit/internal/api/middleware"
 // 	"loopit/internal/db"
 // 	"loopit/internal/enums"
 // 	"loopit/internal/models"
@@ -21,32 +22,30 @@ package main
 // var lenderRepo lender_repo.LenderRepo
 
 // func init() {
-//     dynamo, err := db.ConnectDynamo()
-//     if err != nil {
-//         panic("Failed to connect to DynamoDB: " + err.Error())
-//     }
-//     userRepo := user_repo.NewUserDBRepo(dynamo,lenderRepo)
-//     userService = user_service.NewUserService(userRepo)
+// 	dynamo, err := db.ConnectDynamo()
+// 	if err != nil {
+// 		panic("Failed to connect to DynamoDB: " + err.Error())
+// 	}
+// 	userRepo := user_repo.NewUserDBRepo(dynamo, lenderRepo)
+// 	userService = user_service.NewUserService(userRepo)
 // }
 
-// func Handler(ctx context.Context, event events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-//     var userCtx models.UserContext
-//     if err := json.Unmarshal([]byte(event.Body), &userCtx); err != nil {
-//         return response.LambdaResponse(http.StatusBadRequest, nil, "Invalid user context"), nil
-//     }
+// func Handler(ctx context.Context, event events.APIGatewayProxyRequest, userCtx *models.UserContext) (events.APIGatewayProxyResponse, error) {
+// 	if err := json.Unmarshal([]byte(event.Body), &userCtx); err != nil {
+// 		return response.LambdaResponse(http.StatusBadRequest, nil, "Invalid user context"), nil
+// 	}
 
-//     if err := userService.BecomeLender(&userCtx); err != nil {
-//         return response.LambdaResponse(http.StatusBadRequest, nil, err.Error()), nil
-//     }
+// 	if err := userService.BecomeLender(&userCtx); err != nil {
+// 		return response.LambdaResponse(http.StatusBadRequest, nil, err.Error()), nil
+// 	}
 
-//     userCtx.Role = enums.RoleLender
-//     return response.LambdaResponse(http.StatusOK, map[string]interface{}{
-//         "status":  true,
-//         "message": "User promoted to lender successfully",
-//         "user":    userCtx,
-//     }, ""), nil
+// 	userCtx.Role = enums.RoleLender
+// 	return response.LambdaResponse(http.StatusOK, map[string]interface{}{
+// 		"status":  true,
+// 		"message": "User promoted to lender successfully",
+// 		"user":    userCtx,
+// 	}, ""), nil
 // }
 
 // func main() {
-//     lambda.Start(Handler)
-// }
+// 	lambda.Start(middleware.WithCORS(middleware.WithAuth(Handler)))

@@ -8,7 +8,7 @@ import (
 	"loopit/internal/enums"
 	"loopit/internal/models"
 	"loopit/internal/repository/lender_repo"
-	"loopit/pkg/logger"
+
 	"strings"
 	"time"
 
@@ -23,7 +23,6 @@ import (
 type UserDBRepo struct {
 	db         *db.DynamoClient
 	lenderRepo lender_repo.LenderRepo
-	log        logger.LoggerInterface
 }
 
 func NewUserDBRepo(db *db.DynamoClient, lenderRepo lender_repo.LenderRepo) *UserDBRepo {

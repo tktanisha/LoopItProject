@@ -1,6 +1,7 @@
 package society_service
 
 import (
+	"log"
 	"loopit/internal/models"
 	"loopit/internal/repository/society_repo"
 	"time"
@@ -43,10 +44,13 @@ func (s *SocietyService) CreateSociety(name, location, pincode string) error {
 }
 
 func (s *SocietyService) UpdateSociety(id int64, name, location, pincode string) error {
+	log.Print("entered in service")
 	society, err := s.societyRepo.FindByID(id)
 	if err != nil {
+
 		return err
 	}
+	log.Print("after repo ")
 	society.Name = name
 	society.Location = location
 	society.Pincode = pincode
@@ -54,6 +58,7 @@ func (s *SocietyService) UpdateSociety(id int64, name, location, pincode string)
 	if err != nil {
 		return err
 	}
+	log.Print("after society update")
 	return nil
 }
 
