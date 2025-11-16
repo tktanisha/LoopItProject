@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 
+	"loopit/internal/api/middleware"
 	"loopit/internal/db"
 	"loopit/internal/repository/category_repo"
 	"loopit/internal/services/category_service"
@@ -43,5 +44,5 @@ func GetAllCategoriesHandler(ctx context.Context, event events.APIGatewayProxyRe
 }
 
 func main() {
-    lambda.Start(GetAllCategoriesHandler)
+    lambda.Start(middleware.WithCORS(GetAllCategoriesHandler))
 }

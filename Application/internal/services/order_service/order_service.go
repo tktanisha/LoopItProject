@@ -35,7 +35,7 @@ func NewOrderService(
 }
 
 // in use(on create order), return-requested(on create return request), returned(on mark as returned)
-func (s *OrderService) UpdateOrderStatus(orderID int, newStatus order_status.Status) error {
+func (s *OrderService) UpdateOrderStatus(orderID int64, newStatus order_status.Status) error {
 	s.log.Info(fmt.Sprintf("Updating status of order %d to %s", orderID, newStatus))
 	order, err := s.orderRepo.GetOrderByID(orderID)
 	if err != nil {
@@ -99,7 +99,7 @@ func (s *OrderService) GetLenderOrders(userCtx *models.UserContext) ([]*models.O
 }
 
 // Lender marks order as returned (status: returned)
-func (s *OrderService) MarkOrderAsReturned(orderID int, userCtx *models.UserContext) error {
+func (s *OrderService) MarkOrderAsReturned(orderID int64, userCtx *models.UserContext) error {
 	s.log.Info(fmt.Sprintf("User %d attempting to mark order %d as returned", userCtx.ID, orderID))
 	order, err := s.orderRepo.GetOrderByID(orderID)
 	if err != nil {

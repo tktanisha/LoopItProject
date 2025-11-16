@@ -1,7 +1,7 @@
 package models
 
 type Lender struct {
-	ID            int64     `json:"id"`
-	IsVerified    bool    `json:"is_verified"`
-	TotalEarnings float64 `json:"total_earnings"`
+	ID            int64   `json:"id" dynamodbav:"ID"`
+	IsVerified    bool    `json:"is_verified" dynamodbav:"IsVerified"`
+	TotalEarnings float64 `json:"total_earnings" dynamodbav:"TotalEarnings"`
 }

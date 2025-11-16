@@ -32,7 +32,7 @@ func NewFeedbackService(
 	}
 }
 
-func (s *FeedbackService) GiveFeedback(orderID int, feedbackText string, rating int, userCtx *models.UserContext) error {
+func (s *FeedbackService) GiveFeedback(orderID int64, feedbackText string, rating int, userCtx *models.UserContext) error {
 	s.log.Info(fmt.Sprintf("User %d attempting to give feedback for order %d", userCtx.ID, orderID))
 
 	order, err := s.order_repo.GetOrderByID(orderID)

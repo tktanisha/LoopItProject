@@ -37,7 +37,7 @@ func (p *ProductService) GetAllProducts(filters models.ProductFilter) ([]*models
 }
 
 // GetProductByID returns a product by ID
-func (p *ProductService) GetProductByID(id int) (*models.ProductResponse, error) {
+func (p *ProductService) GetProductByID(id int64) (*models.ProductResponse, error) {
 	fmt.Println("the product of id=", id)
 	p.log.Info(fmt.Sprintf("Fetching product by ID: %d", id))
 
@@ -91,7 +91,7 @@ func (p *ProductService) CreateProduct(product *models.Product, userCtx *models.
 }
 
 // UpdateProduct updates an existing product
-func (p *ProductService) UpdateProduct(productID int, name string, description string, categoryID int, userCtx *models.UserContext) error {
+func (p *ProductService) UpdateProduct(productID int64, name string, description string, categoryID int64, userCtx *models.UserContext) error {
 	if userCtx == nil {
 		p.log.Error("Attempt to update product without user context")
 		return errors.New("user not logged in")
@@ -128,7 +128,7 @@ func (p *ProductService) UpdateProduct(productID int, name string, description s
 }
 
 // DeleteProduct deletes a product by ID
-func (p *ProductService) DeleteProduct(id int, userCtx *models.UserContext) error {
+func (p *ProductService) DeleteProduct(id int64, userCtx *models.UserContext) error {
 	if userCtx == nil {
 		p.log.Error("Attempt to delete product without user context")
 		return errors.New("user not logged in")

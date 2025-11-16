@@ -39,7 +39,7 @@ func NewBuyerRequestService(
 	}
 }
 
-func (s *BuyerRequestService) CreateBuyerRequest(productID int, userCtx *models.UserContext) error {
+func (s *BuyerRequestService) CreateBuyerRequest(productID int64, userCtx *models.UserContext) error {
 	s.log.Info(fmt.Sprintf("CreateBuyerRequest called by user %d for product %d", userCtx.ID, productID))
 
 	// Step 1: Validate the product
@@ -94,7 +94,7 @@ func (s *BuyerRequestService) CreateBuyerRequest(productID int, userCtx *models.
 	return nil
 }
 
-func (s *BuyerRequestService) UpdateBuyerRequestStatus(requestID int, updatedStatus br_status.Status, userCtx *models.UserContext) error {
+func (s *BuyerRequestService) UpdateBuyerRequestStatus(requestID int64, updatedStatus br_status.Status, userCtx *models.UserContext) error {
 	s.log.Info(fmt.Sprintf("UpdateBuyerRequestStatus called by user %d for request %d to status %s", userCtx.ID, requestID, updatedStatus.String()))
 
 	if userCtx.Role != enums.RoleLender {
@@ -171,7 +171,7 @@ func (s *BuyerRequestService) UpdateBuyerRequestStatus(requestID int, updatedSta
 	return nil
 }
 
-func (s *BuyerRequestService) GetAllBuyerRequests(productID *int, filterStatuses []string) ([]models.BuyingRequest, error) {
+func (s *BuyerRequestService) GetAllBuyerRequests(productID *int64, filterStatuses []string) ([]models.BuyingRequest, error) {
 	s.log.Info(fmt.Sprintf("Fetching buyer requests with filters - productID: %v, statuses: %v", productID, filterStatuses))
 
 	// Pass filters directly to the repository

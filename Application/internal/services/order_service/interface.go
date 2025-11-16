@@ -7,10 +7,10 @@ import (
 
 type OrderServiceInterface interface {
 	// CreateOrder(order *models.Order) error-//TODO -need nhi h kyunki buy request se order create ho rha
-	UpdateOrderStatus(orderID int, newStatus order_status.Status) error
+	UpdateOrderStatus(orderID int64, newStatus order_status.Status) error
 	GetOrderHistory(userCtx *models.UserContext, filterStatus []order_status.Status) ([]*models.Order, error)
 	GetAllApprovedAwaitingOrders(userCtx *models.UserContext) ([]*models.Order, error) // for Lender to get all orders that are returned and awaiting status
-	MarkOrderAsReturned(orderID int, userCtx *models.UserContext) error                // Lender marks the product as returned after receiving it
+	MarkOrderAsReturned(orderID int64, userCtx *models.UserContext) error                // Lender marks the product as returned after receiving it
 	GetLenderOrders(userCtx *models.UserContext) ([]*models.Order, error)              // Lender gets all orders where they are the lender
 
 	// // Return-related

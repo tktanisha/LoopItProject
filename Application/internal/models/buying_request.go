@@ -6,11 +6,11 @@ import (
 )
 
 type BuyingRequest struct {
-	ID          int64                         `json:"id"`
-	ProductID   int64                        `json:"product_id"`
-	RequestedBy int64                         `json:"requested_by"`
-	Status      buyer_request_status.Status `json:"status"`
-	CreatedAt   time.Time                   `json:"created_at"`
+	ID          int64                       `json:"id" dynamodbav:"ID"`
+	ProductID   int64                       `json:"product_id" dynamodbav:"ProductId"`
+	RequestedBy int64                       `json:"requested_by" dynamodbav:"RequestedBy"`
+	Status      buyer_request_status.Status `json:"status" dynamodbav:"Status"`
+	CreatedAt   time.Time                   `json:"created_at" dynamodbav:"CreatedAt"`
 }
 
 type BuyingRequestDto struct {

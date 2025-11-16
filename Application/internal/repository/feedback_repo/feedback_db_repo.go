@@ -9,7 +9,7 @@ import (
 
 type FeedBackDBRepo struct {
 	db  *db.DynamoClient
-	
+
 }
 
 func NewFeedBackDBRepo(db *db.DynamoClient) *FeedBackDBRepo {

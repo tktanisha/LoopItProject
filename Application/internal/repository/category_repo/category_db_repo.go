@@ -112,9 +112,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"time"
+	"log"
 	"loopit/internal/db"
 	"loopit/internal/models"
+	"time"
+
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
@@ -154,7 +156,7 @@ func (r *CategoryDBRepo) Create(category models.Category) error {
     return nil
 }
 
-// ✅ FindAll Categories
+
 func (r *CategoryDBRepo) FindAll() ([]models.Category, error) {
     out, err := r.db.Client.Query(context.TODO(), &dynamodb.QueryInput{
         TableName:              aws.String(r.db.Table),
@@ -166,11 +168,13 @@ func (r *CategoryDBRepo) FindAll() ([]models.Category, error) {
     if err != nil {
         return nil, fmt.Errorf("failed to query categories: %w", err)
     }
+    log.Print("get all=",out)
 
     var categories []models.Category
     if err := attributevalue.UnmarshalListOfMaps(out.Items, &categories); err != nil {
         return nil, fmt.Errorf("failed to unmarshal categories: %w", err)
     }
+    log.Print("after getting unmarshal",categories)
     return categories, nil
 }
 
