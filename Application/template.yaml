@@ -11,7 +11,7 @@ Resources:
   Api:
     Type: AWS::Serverless::Api
     Properties:
-      StageName: v1
+      StageName: v3
       Cors:
         AllowMethods: "'GET,POST,PUT,DELETE,OPTIONS,PATCH'"
         AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
@@ -193,6 +193,375 @@ Resources:
           Properties:
             Method: delete
             Path: /societies/{id}
+            RestApiId: !Ref Api
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - DynamoDBCrudPolicy:
+            TableName: !ImportValue Loopit-DynamoTableName
+
+  #users
+
+  DeleteUser:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: go1.x
+    Properties:
+      CodeUri: ./cmd/aws-handler/user/delete_user
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Method: delete
+            Path: /users/{id}
+            RestApiId: !Ref Api
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - DynamoDBCrudPolicy:
+            TableName: !ImportValue Loopit-DynamoTableName
+
+  GetAllUsers:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: go1.x
+    Properties:
+      CodeUri: ./cmd/aws-handler/user/get_all_users
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Method: get
+            Path: /users
+            RestApiId: !Ref Api
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - DynamoDBCrudPolicy:
+            TableName: !ImportValue Loopit-DynamoTableName
+
+  GetUserById:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: go1.x
+    Properties:
+      CodeUri: ./cmd/aws-handler/user/get_user_by_id
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Method: get
+            Path: /users/{id}
+            RestApiId: !Ref Api
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - DynamoDBCrudPolicy:
+            TableName: !ImportValue Loopit-DynamoTableName
+
+  # BecomeLender:
+  #   Type: AWS::Serverless::Function
+  #   Metadata:
+  #     BuildMethod: go1.x
+  #   Properties:
+  #     CodeUri: ./cmd/aws-handler/user/become_lender
+  #     Events:
+  #       ApiEvent:
+  #         Type: Api
+  #         Properties:
+  #           Method: patch
+  #           Path: /users/become-lender
+  #           RestApiId: !Ref Api
+  #     Policies:
+  #       - AWSLambdaBasicExecutionRole
+  #       - DynamoDBCrudPolicy:
+  #           TableName: !ImportValue Loopit-DynamoTableName
+
+  #product lambdas
+
+  CreateProduct:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: go1.x
+    Properties:
+      CodeUri: ./cmd/aws-handler/product/create
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Method: post
+            Path: /products/create
+            RestApiId: !Ref Api
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - DynamoDBCrudPolicy:
+            TableName: !ImportValue Loopit-DynamoTableName
+
+  GetAllProduct:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: go1.x
+    Properties:
+      CodeUri: ./cmd/aws-handler/product/get_all
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Method: get
+            Path: /products
+            RestApiId: !Ref Api
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - DynamoDBCrudPolicy:
+            TableName: !ImportValue Loopit-DynamoTableName
+
+  UpdateProduct:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: go1.x
+    Properties:
+      CodeUri: ./cmd/aws-handler/product/update
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Method: put
+            Path: /products/{id}/update
+            RestApiId: !Ref Api
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - DynamoDBCrudPolicy:
+            TableName: !ImportValue Loopit-DynamoTableName
+
+  DeleteProduct:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: go1.x
+    Properties:
+      CodeUri: ./cmd/aws-handler/product/delete
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Method: delete
+            Path: /products/{id}/delete
+            RestApiId: !Ref Api
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - DynamoDBCrudPolicy:
+            TableName: !ImportValue Loopit-DynamoTableName
+
+  GetProductById:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: go1.x
+    Properties:
+      CodeUri: ./cmd/aws-handler/product/get_by_id
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Method: get
+            Path: /products/{id}
+            RestApiId: !Ref Api
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - DynamoDBCrudPolicy:
+            TableName: !ImportValue Loopit-DynamoTableName
+
+  #buyRequest lambdas
+  CreateBuyRequest:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: go1.x
+    Properties:
+      CodeUri: ./cmd/aws-handler/buy-request/create
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Method: post
+            Path: /buyer-requests
+            RestApiId: !Ref Api
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - DynamoDBCrudPolicy:
+            TableName: !ImportValue Loopit-DynamoTableName
+
+  GetAllBuyRequest:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: go1.x
+    Properties:
+      CodeUri: ./cmd/aws-handler/buy-request/get_all
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Method: get
+            Path: /buyer-requests
+            RestApiId: !Ref Api
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - DynamoDBCrudPolicy:
+            TableName: !ImportValue Loopit-DynamoTableName
+
+  UpdateBuyRequest:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: go1.x
+    Properties:
+      CodeUri: ./cmd/aws-handler/buy-request/update_status
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Method: patch
+            Path: /buyer-requests/{requestId}/update
+            RestApiId: !Ref Api
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - DynamoDBCrudPolicy:
+            TableName: !ImportValue Loopit-DynamoTableName
+
+  # Order Lambdas
+  GetOrderHistory:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: go1.x
+    Properties:
+      CodeUri: ./cmd/aws-handler/order/order_history
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Method: get
+            Path: /orders/history
+            RestApiId: !Ref Api
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - DynamoDBCrudPolicy:
+            TableName: !ImportValue Loopit-DynamoTableName
+
+  MarkOrderAsReturned:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: go1.x
+    Properties:
+      CodeUri: ./cmd/aws-handler/order/mark_order_returned
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Method: patch
+            Path: /orders/{orderId}/return
+            RestApiId: !Ref Api
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - DynamoDBCrudPolicy:
+            TableName: !ImportValue Loopit-DynamoTableName
+
+  GetAllApprovedAwaitingOrders:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: go1.x
+    Properties:
+      CodeUri: ./cmd/aws-handler/order/approved_awaiting_orders
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Method: get
+            Path: /orders/approved-awaiting
+            RestApiId: !Ref Api
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - DynamoDBCrudPolicy:
+            TableName: !ImportValue Loopit-DynamoTableName
+
+  GetLenderOrders:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: go1.x
+    Properties:
+      CodeUri: ./cmd/aws-handler/order/lenders_orders
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Method: get
+            Path: /orders/lender
+            RestApiId: !Ref Api
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - DynamoDBCrudPolicy:
+            TableName: !ImportValue Loopit-DynamoTableName
+
+  #return request lambdas
+  CreateReturnRequest:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: go1.x
+    Properties:
+      CodeUri: ./cmd/aws-handler/return_request/create
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Method: post
+            Path: /return-requests
+            RestApiId: !Ref Api
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - DynamoDBCrudPolicy:
+            TableName: !ImportValue Loopit-DynamoTableName
+
+  GetPendingReturnRequests:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: go1.x
+    Properties:
+      CodeUri: ./cmd/aws-handler/return_request/get_pending
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Method: get
+            Path: /return-requests
+            RestApiId: !Ref Api
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - DynamoDBCrudPolicy:
+            TableName: !ImportValue Loopit-DynamoTableName
+
+  UpdateReturnRequestStatus:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: go1.x
+    Properties:
+      CodeUri: ./cmd/aws-handler/return_request/update
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Method: patch
+            Path: /return-requests/{requestId}/update
+            RestApiId: !Ref Api
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - DynamoDBCrudPolicy:
+            TableName: !ImportValue Loopit-DynamoTableName
+
+  #feedback
+  #return request lambdas
+  CreateFeedback:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: go1.x
+    Properties:
+      CodeUri: ./cmd/aws-handler/feedback/give_feedback
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Method: post
+            Path: /feedbacks
             RestApiId: !Ref Api
       Policies:
         - AWSLambdaBasicExecutionRole

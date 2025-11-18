@@ -32,6 +32,7 @@ func init() {
 
     buyerReqRepo := buyer_request_repo.NewBuyerRequestDBRepo(dynamo)
     categoryRepo := category_repo.NewCategoryDBRepo(dynamo)
+    lenderRepo = lender_repo.NewLenderDBRepo(dynamo)
     userRepo := user_repo.NewUserDBRepo(dynamo,lenderRepo)
     productRepo := product_repo.NewProductDBRepo(dynamo,categoryRepo,userRepo)
     orderRepo := order_repo.NewOrderDBRepo(dynamo,productRepo)

@@ -87,6 +87,6 @@ func NewLenderDBRepo(db *db.DynamoClient) *LenderDBRepo {
 // }
 
 // // Save is a no-op for Postgres
-// func (r *LenderDBRepo) Save() error {
-// 	return nil
-// }
+func (r *LenderDBRepo) Save() error {
+	return nil
+}

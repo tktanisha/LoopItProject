@@ -180,7 +180,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"loopit/internal/db"
+	"loopit/internal/enums/order_status"
 	"loopit/internal/models"
 	"loopit/internal/repository/product_repo"
 	"time"
@@ -204,6 +206,53 @@ func NewOrderDBRepo(db *db.DynamoClient, productRepo product_repo.ProductRepo) *
 }
 
 // ✅ CreateOrder
+// func (r *OrderDBRepo) CreateOrder(order models.Order) error {
+//     order.ID = time.Now().UnixNano()
+//     order.CreatedAt = time.Now()
+
+//     // Fetch lender ID from product
+//     product, err := r.productRepo.FindByID(order.ProductID)
+//     if err != nil {
+//         return fmt.Errorf("failed to fetch product for lender info: %w", err)
+//     }
+//     lenderID := product.Product.LenderID
+
+//     base := map[string]types.AttributeValue{
+//         "ID":             &types.AttributeValueMemberN{Value: fmt.Sprintf("%d", order.ID)},
+//         "ProductID":      &types.AttributeValueMemberN{Value: fmt.Sprintf("%d", order.ProductID)},
+//         "UserID":         &types.AttributeValueMemberN{Value: fmt.Sprintf("%d", order.UserID)},
+//         "StartDate":      &types.AttributeValueMemberS{Value: order.StartDate.Format(time.RFC3339)},
+//         "EndDate":        &types.AttributeValueMemberS{Value: order.EndDate.Format(time.RFC3339)},
+//         "TotalAmount":    &types.AttributeValueMemberN{Value: fmt.Sprintf("%f", order.TotalAmount)},
+//         "SecurityAmount": &types.AttributeValueMemberN{Value: fmt.Sprintf("%f", order.SecurityAmount)},
+//         "Status":         &types.AttributeValueMemberS{Value: order.Status.String()},
+//         "CreatedAt":      &types.AttributeValueMemberS{Value: order.CreatedAt.Format(time.RFC3339)},
+//     }
+
+//     // Items for access patterns
+//     items := []map[string]types.AttributeValue{
+//         mergeMap(base, map[string]types.AttributeValue{
+//             "pk": &types.AttributeValueMemberS{Value: fmt.Sprintf("USER#%d", order.UserID)},
+//             "sk": &types.AttributeValueMemberS{Value: fmt.Sprintf("ORDER#ID#%d", order.ID)},
+//         }),
+//         mergeMap(base, map[string]types.AttributeValue{
+//             "pk": &types.AttributeValueMemberS{Value: fmt.Sprintf("LENDER#%d", lenderID)},
+//             "sk": &types.AttributeValueMemberS{Value: fmt.Sprintf("ORDER#ID#%d", order.ID)},
+//         }),
+//     }
+
+//     for _, item := range items {
+//         _, err := r.db.Client.PutItem(context.TODO(), &dynamodb.PutItemInput{
+//             TableName: aws.String(r.db.Table),
+//             Item:      item,
+//         })
+//         if err != nil {
+//             return fmt.Errorf("failed to create order item: %w", err)
+//         }
+//     }
+//     return nil
+// }
+
 func (r *OrderDBRepo) CreateOrder(order models.Order) error {
     order.ID = time.Now().UnixNano()
     order.CreatedAt = time.Now()
@@ -215,6 +264,7 @@ func (r *OrderDBRepo) CreateOrder(order models.Order) error {
     }
     lenderID := product.Product.LenderID
 
+    // Base attributes
     base := map[string]types.AttributeValue{
         "ID":             &types.AttributeValueMemberN{Value: fmt.Sprintf("%d", order.ID)},
         "ProductID":      &types.AttributeValueMemberN{Value: fmt.Sprintf("%d", order.ProductID)},
@@ -227,7 +277,7 @@ func (r *OrderDBRepo) CreateOrder(order models.Order) error {
         "CreatedAt":      &types.AttributeValueMemberS{Value: order.CreatedAt.Format(time.RFC3339)},
     }
 
-    // Items for access patterns
+    // Items for all access patterns
     items := []map[string]types.AttributeValue{
         mergeMap(base, map[string]types.AttributeValue{
             "pk": &types.AttributeValueMemberS{Value: fmt.Sprintf("USER#%d", order.UserID)},
@@ -237,8 +287,13 @@ func (r *OrderDBRepo) CreateOrder(order models.Order) error {
             "pk": &types.AttributeValueMemberS{Value: fmt.Sprintf("LENDER#%d", lenderID)},
             "sk": &types.AttributeValueMemberS{Value: fmt.Sprintf("ORDER#ID#%d", order.ID)},
         }),
+        mergeMap(base, map[string]types.AttributeValue{
+            "pk": &types.AttributeValueMemberS{Value: "ORDER"},
+            "sk": &types.AttributeValueMemberS{Value: fmt.Sprintf("ID#%d", order.ID)},
+        }),
     }
 
+    // Insert all items
     for _, item := range items {
         _, err := r.db.Client.PutItem(context.TODO(), &dynamodb.PutItemInput{
             TableName: aws.String(r.db.Table),
@@ -248,13 +303,15 @@ func (r *OrderDBRepo) CreateOrder(order models.Order) error {
             return fmt.Errorf("failed to create order item: %w", err)
         }
     }
+
+    log.Printf("Order created successfully with ID=%d", order.ID)
     return nil
 }
 
+
 // ✅ UpdateOrderStatus
 func (r *OrderDBRepo) UpdateOrderStatus(orderID int64, newStatus string) error {
-    // Update both copies (USER and LENDER)
-    // First, find the order to get UserID and LenderID
+   
     order, err := r.GetOrderByID(orderID)
     if err != nil {
         return err
@@ -284,7 +341,6 @@ func (r *OrderDBRepo) UpdateOrderStatus(orderID int64, newStatus string) error {
     return nil
 }
 
-// ✅ GetOrderHistory (by user)
 func (r *OrderDBRepo) GetOrderHistory(userID int64, filterStatuses []string) ([]*models.Order, error) {
     out, err := r.db.Client.Query(context.TODO(), &dynamodb.QueryInput{
         TableName:              aws.String(r.db.Table),
@@ -298,12 +354,43 @@ func (r *OrderDBRepo) GetOrderHistory(userID int64, filterStatuses []string) ([]
         return nil, fmt.Errorf("failed to query order history: %w", err)
     }
 
-    var orders []*models.Order
-    if err := attributevalue.UnmarshalListOfMaps(out.Items, &orders); err != nil {
-        return nil, err
+    type orderHelper struct {
+        ID             int64     `dynamodbav:"ID"`
+        ProductID      int64     `dynamodbav:"ProductID"`
+        UserID         int64     `dynamodbav:"UserID"`
+        StartDate      time.Time `dynamodbav:"StartDate"`
+        EndDate        time.Time `dynamodbav:"EndDate"`
+        TotalAmount    float64   `dynamodbav:"TotalAmount"`
+        SecurityAmount float64   `dynamodbav:"SecurityAmount"`
+        StatusStr      string    `dynamodbav:"Status"`
+        CreatedAt      time.Time `dynamodbav:"CreatedAt"`
     }
 
-    // Filter by status in memory
+    var helpers []orderHelper
+    if err := attributevalue.UnmarshalListOfMaps(out.Items, &helpers); err != nil {
+        return nil, fmt.Errorf("failed to unmarshal orders: %w", err)
+    }
+
+    var orders []*models.Order
+    for _, h := range helpers {
+        status, err := order_status.ParseStatus(h.StatusStr)
+        if err != nil {
+            continue
+        }
+        orders = append(orders, &models.Order{
+            ID:             h.ID,
+            ProductID:      h.ProductID,
+            UserID:         h.UserID,
+            StartDate:      h.StartDate,
+            EndDate:        h.EndDate,
+            TotalAmount:    h.TotalAmount,
+            SecurityAmount: h.SecurityAmount,
+            Status:         status,
+            CreatedAt:      h.CreatedAt,
+        })
+    }
+
+    // Filter by status if provided
     if len(filterStatuses) > 0 {
         var filtered []*models.Order
         statusMap := make(map[string]bool)
@@ -317,10 +404,9 @@ func (r *OrderDBRepo) GetOrderHistory(userID int64, filterStatuses []string) ([]
         }
         return filtered, nil
     }
+
     return orders, nil
 }
-
-// ✅ GetLenderOrders
 func (r *OrderDBRepo) GetLenderOrders(userID int64) ([]*models.Order, error) {
     out, err := r.db.Client.Query(context.TODO(), &dynamodb.QueryInput{
         TableName:              aws.String(r.db.Table),
@@ -334,40 +420,104 @@ func (r *OrderDBRepo) GetLenderOrders(userID int64) ([]*models.Order, error) {
         return nil, fmt.Errorf("failed to query lender orders: %w", err)
     }
 
-    var orders []*models.Order
-    if err := attributevalue.UnmarshalListOfMaps(out.Items, &orders); err != nil {
-        return nil, err
+    type orderHelper struct {
+        ID             int64     `dynamodbav:"ID"`
+        ProductID      int64     `dynamodbav:"ProductID"`
+        UserID         int64     `dynamodbav:"UserID"`
+        StartDate      time.Time `dynamodbav:"StartDate"`
+        EndDate        time.Time `dynamodbav:"EndDate"`
+        TotalAmount    float64   `dynamodbav:"TotalAmount"`
+        SecurityAmount float64   `dynamodbav:"SecurityAmount"`
+        StatusStr      string    `dynamodbav:"Status"`
+        CreatedAt      time.Time `dynamodbav:"CreatedAt"`
     }
+
+    var helpers []orderHelper
+    if err := attributevalue.UnmarshalListOfMaps(out.Items, &helpers); err != nil {
+        return nil, fmt.Errorf("failed to unmarshal orders: %w", err)
+    }
+
+    var orders []*models.Order
+    for _, h := range helpers {
+        status, err := order_status.ParseStatus(h.StatusStr)
+        if err != nil {
+            continue
+        }
+        orders = append(orders, &models.Order{
+            ID:             h.ID,
+            ProductID:      h.ProductID,
+            UserID:         h.UserID,
+            StartDate:      h.StartDate,
+            EndDate:        h.EndDate,
+            TotalAmount:    h.TotalAmount,
+            SecurityAmount: h.SecurityAmount,
+            Status:         status,
+            CreatedAt:      h.CreatedAt,
+        })
+    }
+
     return orders, nil
 }
 
-// ✅ GetOrderByID
 func (r *OrderDBRepo) GetOrderByID(orderID int64) (*models.Order, error) {
-    // Query USER partition first (or scan both)
-    out, err := r.db.Client.Query(context.TODO(), &dynamodb.QueryInput{
-        TableName:              aws.String(r.db.Table),
-        KeyConditionExpression: aws.String("begins_with(sk, :skPrefix)"),
-        ExpressionAttributeValues: map[string]types.AttributeValue{
-            ":skPrefix": &types.AttributeValueMemberS{Value: fmt.Sprintf("ORDER#ID#%d", orderID)},
+    // Use GetItem with pk=ORDER and sk=ID#<orderId>
+    out, err := r.db.Client.GetItem(context.TODO(), &dynamodb.GetItemInput{
+        TableName: aws.String(r.db.Table),
+        Key: map[string]types.AttributeValue{
+            "pk": &types.AttributeValueMemberS{Value: "ORDER"},
+            "sk": &types.AttributeValueMemberS{Value: fmt.Sprintf("ID#%d", orderID)},
         },
     })
-    if err != nil || len(out.Items) == 0 {
+    if err != nil {
+        return nil, fmt.Errorf("failed to get order: %w", err)
+    }
+    if out.Item == nil {
         return nil, errors.New("order not found")
     }
-
-    var order models.Order
-    if err := attributevalue.UnmarshalMap(out.Items[0], &order); err != nil {
-        return nil, err
+    log.Print("item-",out.Item)
+    // Helper struct for unmarshalling
+    type orderHelper struct {
+        ID             int64     `dynamodbav:"ID"`
+        ProductID      int64     `dynamodbav:"ProductID"`
+        UserID         int64     `dynamodbav:"UserID"`
+        StartDate      time.Time `dynamodbav:"StartDate"`
+        EndDate        time.Time `dynamodbav:"EndDate"`
+        TotalAmount    float64   `dynamodbav:"TotalAmount"`
+        SecurityAmount float64   `dynamodbav:"SecurityAmount"`
+        StatusStr      string    `dynamodbav:"Status"`
+        CreatedAt      time.Time `dynamodbav:"CreatedAt"`
     }
-    return &order, nil
+
+    var helper orderHelper
+    if err := attributevalue.UnmarshalMap(out.Item, &helper); err != nil {
+        return nil, fmt.Errorf("failed to unmarshal order: %w", err)
+    }
+    log.Print("helper=",helper)
+    // Convert status string to enum
+    status, err := order_status.ParseStatus(helper.StatusStr)
+    if err != nil {
+        return nil, fmt.Errorf("invalid status: %w", err)
+    }
+
+    return &models.Order{
+        ID:             helper.ID,
+        ProductID:      helper.ProductID,
+        UserID:         helper.UserID,
+        StartDate:      helper.StartDate,
+        EndDate:        helper.EndDate,
+        TotalAmount:    helper.TotalAmount,
+        SecurityAmount: helper.SecurityAmount,
+        Status:         status,
+        CreatedAt:      helper.CreatedAt,
+    }, nil
 }
 
-// ✅ Save (no-op)
+
 func (r *OrderDBRepo) Save() error {
     return nil
 }
 
-// Helper
+
 func mergeMap(base, extra map[string]types.AttributeValue) map[string]types.AttributeValue {
     merged := make(map[string]types.AttributeValue)
     for k, v := range base {

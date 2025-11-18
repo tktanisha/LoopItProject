@@ -2,6 +2,7 @@ package order_service
 
 import (
 	"errors"
+	"log"
 	"loopit/internal/enums"
 	"loopit/internal/enums/order_status"
 	"loopit/internal/enums/return_request_status"
@@ -80,6 +81,7 @@ func (s *OrderService) GetLenderOrders(userCtx *models.UserContext) ([]*models.O
 func (s *OrderService) MarkOrderAsReturned(orderID int64, userCtx *models.UserContext) error {
 	order, err := s.orderRepo.GetOrderByID(orderID)
 	if err != nil {
+		log.Print("err in service1=",err)
 		return err
 	}
 	if order == nil {
@@ -88,6 +90,7 @@ func (s *OrderService) MarkOrderAsReturned(orderID int64, userCtx *models.UserCo
 
 	product, err := s.productRepo.FindByID(order.ProductID)
 	if err != nil {
+		log.Print("err in service2=",err)
 		return errors.New("unable to find product for the order")
 	}
 	if product == nil {
@@ -116,6 +119,7 @@ func (s *OrderService) MarkOrderAsReturned(orderID int64, userCtx *models.UserCo
 	// }
 
 	if err := s.orderRepo.UpdateOrderStatus(orderID, order_status.Returned.String()); err != nil {
+		
 		return err
 	}
 	return nil

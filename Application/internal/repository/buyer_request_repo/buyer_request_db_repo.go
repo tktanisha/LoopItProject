@@ -138,7 +138,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"loopit/internal/db"
+	"loopit/internal/enums/buyer_request_status"
 	"loopit/internal/models"
 	"time"
 
@@ -204,41 +206,80 @@ func (r *BuyerRequestDBRepo) CreateBuyerRequest(req models.BuyingRequest) error 
     return nil
 }
 
-// ✅ GetAllBuyerRequests
 func (r *BuyerRequestDBRepo) GetAllBuyerRequests(id *int64, filterStatuses []string) ([]models.BuyingRequest, error) {
     var skPrefix string
     if len(filterStatuses) > 0 {
-        // Only first status considered for now (can loop for multiple)
         skPrefix = fmt.Sprintf("STATUS#%s", filterStatuses[0])
     }
+    log.Print("id and filter=",id,filterStatuses)
 
- out, err := r.db.Client.Query(context.TODO(), &dynamodb.QueryInput{
-    TableName:              aws.String(r.db.Table),
-    KeyConditionExpression: aws.String("pk = :pk AND begins_with(sk, :skPrefix)"),
-    ExpressionAttributeValues: map[string]types.AttributeValue{
-        ":pk":       &types.AttributeValueMemberS{Value: "BUYREQUEST"},
-        ":skPrefix": &types.AttributeValueMemberS{Value: skPrefix},
-    },
-})
+        var queryInput dynamodb.QueryInput
+        if len(filterStatuses) > 0 {
+            queryInput = dynamodb.QueryInput{
+                TableName:              aws.String(r.db.Table),
+                KeyConditionExpression: aws.String("pk = :pk AND begins_with(sk, :skPrefix)"),
+                ExpressionAttributeValues: map[string]types.AttributeValue{
+                    ":pk":       &types.AttributeValueMemberS{Value: "BUYREQUEST"},
+                    ":skPrefix": &types.AttributeValueMemberS{Value: skPrefix},
+                },
+            }
+        } else {
+            queryInput = dynamodb.QueryInput{
+                TableName:              aws.String(r.db.Table),
+                KeyConditionExpression: aws.String("pk = :pk"),
+                ExpressionAttributeValues: map[string]types.AttributeValue{
+                    ":pk": &types.AttributeValueMemberS{Value: "BUYREQUEST"},
+                },
+            }
+        }
+
+        out, err := r.db.Client.Query(context.TODO(), &queryInput)
+    
     if err != nil {
+        log.Print("afetr query",err)
         return nil, fmt.Errorf("failed to query buyer requests: %w", err)
     }
 
-    var requests []models.BuyingRequest
-    if err := attributevalue.UnmarshalListOfMaps(out.Items, &requests); err != nil {
+    type requestHelper struct {
+        ID          int64     `dynamodbav:"ID"`
+        ProductID   int64     `dynamodbav:"ProductId"`
+        RequestedBy int64     `dynamodbav:"RequestedBy"`
+        StatusStr   string    `dynamodbav:"Status"`
+        CreatedAt   time.Time `dynamodbav:"CreatedAt"`
+    }
+
+    var helpers []requestHelper
+    if err := attributevalue.UnmarshalListOfMaps(out.Items, &helpers); err != nil {
         return nil, fmt.Errorf("failed to unmarshal buyer requests: %w", err)
     }
 
-    // Filter in memory if needed
+
     var filtered []models.BuyingRequest
-    for _, req := range requests {
+    for _, h := range helpers {
+        status, err := buyer_request_status.ParseStatus(h.StatusStr)
+        if err != nil {
+            log.Print("parsing",err)
+            continue // or log error
+        }
+
+        req := models.BuyingRequest{
+            ID:          h.ID,
+            ProductID:   h.ProductID,
+            RequestedBy: h.RequestedBy,
+            Status:      status,
+            CreatedAt:   h.CreatedAt,
+        }
+
+        
         if id != nil && req.ProductID != *id {
             continue
         }
         if len(filterStatuses) > 0 && req.Status.String() != filterStatuses[0] {
             continue
         }
+
         filtered = append(filtered, req)
+        log.Print("filtered= 1",filtered)
     }
 
     return filtered, nil
@@ -246,11 +287,19 @@ func (r *BuyerRequestDBRepo) GetAllBuyerRequests(id *int64, filterStatuses []str
 
 
 func (r *BuyerRequestDBRepo) UpdateStatusBuyerRequest(id int64, newStatus string) error {
-    _, err := r.db.Client.UpdateItem(context.TODO(), &dynamodb.UpdateItemInput{
+    if id <= 0 {
+        return fmt.Errorf("invalid id: %d", id)
+    }
+
+    skValue := fmt.Sprintf("ID#%d", id)
+
+    log.Print("in update repo beofre updtae")
+
+    out, err := r.db.Client.UpdateItem(context.TODO(), &dynamodb.UpdateItemInput{
         TableName: aws.String(r.db.Table),
         Key: map[string]types.AttributeValue{
             "pk": &types.AttributeValueMemberS{Value: "BUYREQUEST"},
-            "sk": &types.AttributeValueMemberS{Value: fmt.Sprintf("ID#%d", id)},
+            "sk": &types.AttributeValueMemberS{Value: skValue},
         },
         UpdateExpression: aws.String("SET #s = :status"),
         ExpressionAttributeNames: map[string]string{
@@ -260,19 +309,24 @@ func (r *BuyerRequestDBRepo) UpdateStatusBuyerRequest(id int64, newStatus string
             ":status": &types.AttributeValueMemberS{Value: newStatus},
         },
     })
+     log.Print("in update repo after updtae=",out)
     if err != nil {
+        log.Print("error in repo= in update statsu",err )
         return fmt.Errorf("failed to update buyer request status: %w", err)
     }
+    log.Print("end of repo")
     return nil
 }
 
 
 func (r *BuyerRequestDBRepo) GetBuyerRequestByID(id int64) (*models.BuyingRequest, error) {
+    // Prepare DynamoDB key
     key := map[string]types.AttributeValue{
         "pk": &types.AttributeValueMemberS{Value: "BUYREQUEST"},
         "sk": &types.AttributeValueMemberS{Value: fmt.Sprintf("ID#%d", id)},
     }
 
+    // Fetch item from DynamoDB
     out, err := r.db.Client.GetItem(context.TODO(), &dynamodb.GetItemInput{
         TableName: aws.String(r.db.Table),
         Key:       key,
@@ -284,13 +338,37 @@ func (r *BuyerRequestDBRepo) GetBuyerRequestByID(id int64) (*models.BuyingReques
         return nil, errors.New("buyer request not found")
     }
 
-    var req models.BuyingRequest
-    if err := attributevalue.UnmarshalMap(out.Item, &req); err != nil {
+    // Helper struct for unmarshalling DynamoDB attributes
+    type requestHelper struct {
+        ID          int64     `dynamodbav:"ID"`
+        ProductID   int64     `dynamodbav:"ProductId"`
+        RequestedBy int64     `dynamodbav:"RequestedBy"`
+        StatusStr   string    `dynamodbav:"Status"`
+        CreatedAt   time.Time `dynamodbav:"CreatedAt"`
+    }
+
+    var h requestHelper
+    if err := attributevalue.UnmarshalMap(out.Item, &h); err != nil {
         return nil, fmt.Errorf("failed to unmarshal buyer request: %w", err)
     }
+
+    // Convert Status string to enum
+    status, err := buyer_request_status.ParseStatus(h.StatusStr)
+    if err != nil {
+        return nil, fmt.Errorf("invalid status value: %w", err)
+    }
+
+    // Build final model
+    req := models.BuyingRequest{
+        ID:          h.ID,
+        ProductID:   h.ProductID,
+        RequestedBy: h.RequestedBy,
+        Status:      status,
+        CreatedAt:   h.CreatedAt,
+    }
+
     return &req, nil
 }
-
 
 func (r *BuyerRequestDBRepo) DeleteBuyerRequest(id int64) error {
     _, err := r.db.Client.DeleteItem(context.TODO(), &dynamodb.DeleteItemInput{

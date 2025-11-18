@@ -2,7 +2,7 @@ package buyer_request_service
 
 import (
 	"errors"
-	"fmt"
+	"log"
 	"loopit/internal/enums"
 	br_status "loopit/internal/enums/buyer_request_status"
 	order_status "loopit/internal/enums/order_status"
@@ -40,7 +40,9 @@ func (s *BuyerRequestService) CreateBuyerRequest(productID int64, userCtx *model
 
 	// Step 1: Validate the product
 	product, err := s.productRepo.FindByID(productID)
+	log.Print("product in service=",product)
 	if err != nil {
+		log.Print(err)
 		return errors.New("product not found")
 	}
 	if !product.Product.IsAvailable {
@@ -59,6 +61,7 @@ func (s *BuyerRequestService) CreateBuyerRequest(productID int64, userCtx *model
 	// Pass productID and statuses to the repository for efficient filtering
 	existingRequests, err := s.buyerRequestRepo.GetAllBuyerRequests(prodIDPtr, statuses)
 	if err != nil {
+		log.Print("after repo=",err)
 		return err
 	}
 
@@ -92,16 +95,19 @@ func (s *BuyerRequestService) UpdateBuyerRequestStatus(requestID int64, updatedS
 	if updatedStatus != br_status.Approved && updatedStatus != br_status.Rejected {
 		return errors.New("invalid status: only 'approved' or 'rejected' allowed")
 	}
-
+    log.Print("1")
 	allRequests, err := s.buyerRequestRepo.GetAllBuyerRequests(nil, nil)
 	if err != nil {
+		log.Print("service=",err)
 		return err
 	}
-
+    log.Print("all buy request=",allRequests)
 	var req *models.BuyingRequest
 	for i := range allRequests {
+		log.Print("i=",i)
 		if allRequests[i].ID == requestID {
 			req = &allRequests[i]
+			log.Print("req=",req)
 			break
 		}
 	}
@@ -111,17 +117,20 @@ func (s *BuyerRequestService) UpdateBuyerRequestStatus(requestID int64, updatedS
 
 	if updatedStatus == br_status.Rejected {
 		if err := s.buyerRequestRepo.UpdateStatusBuyerRequest(requestID, br_status.Rejected.String()); err != nil {
+			log.Print("error=",err)
 			return err
 		}
 		return nil
 	}
 
 	product, err := s.productRepo.FindByID(req.ProductID)
+	log.Print("2")
 	if err != nil {
 		return errors.New("product not found")
 	}
 
 	category, err := s.categoryRepo.FindByID(product.Category.ID)
+	log.Print("3")
 	if err != nil {
 		return errors.New("category not found")
 	}
@@ -138,12 +147,16 @@ func (s *BuyerRequestService) UpdateBuyerRequestStatus(requestID int64, updatedS
 	}
 
 	if err := s.orderRepo.CreateOrder(newOrder); err != nil {
+		log.Print("error in creating order=",err)
 		return err
 	}
+	log.Print("4")
 
 	if err := s.buyerRequestRepo.UpdateStatusBuyerRequest(requestID, br_status.Approved.String()); err != nil {
+		log.Print("error in updating buy req=",err)
 		return err
 	}
+	log.Print("5")
 
 	return nil
 }
@@ -153,9 +166,10 @@ func (s *BuyerRequestService) GetAllBuyerRequests(productID *int64, filterStatus
 	// Pass filters directly to the repository
 	requests, err := s.buyerRequestRepo.GetAllBuyerRequests(productID, filterStatuses)
 	if err != nil {
+		log.Print(err)
 		return nil, err
 	}
 
-	fmt.Println("request=", requests)
+	log.Print("request=", requests)
 	return requests, nil
 }

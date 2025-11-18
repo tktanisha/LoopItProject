@@ -400,10 +400,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"loopit/internal/db"
 	"loopit/internal/models"
 	"loopit/internal/repository/category_repo"
 	"loopit/internal/repository/user_repo"
+	"strconv"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -426,7 +428,6 @@ func NewProductDBRepo(db *db.DynamoClient, categoryRepo category_repo.CategoryRe
     }
 }
 
-// ✅ Create Product
 func (r *ProductDBRepo) Create(product *models.Product) error {
     product.ID = time.Now().UnixNano()
     product.CreatedAt = time.Now()
@@ -444,7 +445,7 @@ func (r *ProductDBRepo) Create(product *models.Product) error {
         "CreatedAt":  &types.AttributeValueMemberS{Value: product.CreatedAt.Format(time.RFC3339)},
     }
 
-    // Items for access patterns
+    
     items := []map[string]types.AttributeValue{
         mergeMap(base, map[string]types.AttributeValue{
             "pk": &types.AttributeValueMemberS{Value: "PRODUCT"},
@@ -472,7 +473,6 @@ func (r *ProductDBRepo) Create(product *models.Product) error {
     return nil
 }
 
-// ✅ FindByID
 func (r *ProductDBRepo) FindByID(id int64) (*models.ProductResponse, error) {
     key := map[string]types.AttributeValue{
         "pk": &types.AttributeValueMemberS{Value: "PRODUCT"},
@@ -490,22 +490,66 @@ func (r *ProductDBRepo) FindByID(id int64) (*models.ProductResponse, error) {
         return nil, errors.New("product not found")
     }
 
-    var product models.Product
-    if err := attributevalue.UnmarshalMap(out.Item, &product); err != nil {
+    // Helper struct for unmarshalling
+    type productHelper struct {
+        ID          int64   `dynamodbav:"ID"`
+        LenderID    string    `dynamodbav:"LenderID"`
+        CategoryID  string    `dynamodbav:"CategoryID"`
+        Name        string    `dynamodbav:"Name"`
+        Description string    `dynamodbav:"Description"`
+        Duration    int       `dynamodbav:"Duration"`
+        IsAvailable bool      `dynamodbav:"IsAvailable"`
+        CreatedAt   time.Time `dynamodbav:"CreatedAt"`
+        ImageUrl    string    `dynamodbav:"ImageUrl"`
+    }
+
+    var helper productHelper
+    if err := attributevalue.UnmarshalMap(out.Item, &helper); err != nil {
         return nil, fmt.Errorf("failed to unmarshal product: %w", err)
     }
 
-    category, _ := r.categoryRepo.FindByID(product.CategoryID)
-    user, _ := r.userRepo.FindByID(product.LenderID)
+    // Convert string IDs to int64
+    lenderID, _ := strconv.ParseInt(helper.LenderID, 10, 64)
+    categoryID, _ := strconv.ParseInt(helper.CategoryID, 10, 64)
 
-    return &models.ProductResponse{
-        Product:  product,
+    // Fetch related category
+    var category models.Category
+    if r.categoryRepo != nil {
+        category, _ = r.categoryRepo.FindByID(categoryID)
+    }
+
+    // Fetch related user
+    var user models.User
+    if r.userRepo != nil {
+        u, err := r.userRepo.FindByID(lenderID)
+        if err != nil {
+            log.Printf("could not find user for lenderID=%d: %v", lenderID, err)
+        }
+        if u != nil {
+            user = *u
+        }
+    }
+
+    response := &models.ProductResponse{
+        Product: models.Product{
+            ID:          helper.ID,
+            LenderID:    lenderID,
+            CategoryID:  categoryID,
+            Name:        helper.Name,
+            Description: helper.Description,
+            Duration:    helper.Duration,
+            IsAvailable: helper.IsAvailable,
+            CreatedAt:   helper.CreatedAt,
+            ImageUrl:    helper.ImageUrl,
+        },
         Category: category,
-        User:     *user,
-    }, nil
+        User:     user,
+    }
+
+    log.Printf("FindByID result: %+v", response)
+    return response, nil
 }
 
-// ✅ FindAll (filter by lender or name)
 func (r *ProductDBRepo) FindAll(filters models.ProductFilter) ([]*models.ProductResponse, error) {
     var skPrefix string
     if filters.LenderID != "" {
@@ -528,64 +572,196 @@ func (r *ProductDBRepo) FindAll(filters models.ProductFilter) ([]*models.Product
         return nil, fmt.Errorf("failed to query products: %w", err)
     }
 
-    var products []models.Product
-    if err := attributevalue.UnmarshalListOfMaps(out.Items, &products); err != nil {
+    // Helper struct for unmarshalling
+    type productHelper struct {
+        ID          int64   `dynamodbav:"ID"`
+        LenderID    string    `dynamodbav:"LenderID"`
+        CategoryID  string    `dynamodbav:"CategoryID"`
+        Name        string    `dynamodbav:"Name"`
+        Description string    `dynamodbav:"Description"`
+        Duration    int       `dynamodbav:"Duration"`
+        IsAvailable bool      `dynamodbav:"IsAvailable"`
+        CreatedAt   time.Time `dynamodbav:"CreatedAt"`
+        ImageUrl    string    `dynamodbav:"ImageUrl"`
+    }
+
+    var helpers []productHelper
+    if err := attributevalue.UnmarshalListOfMaps(out.Items, &helpers); err != nil {
+        log.Print("error after unmarshalling=", err)
         return nil, fmt.Errorf("failed to unmarshal products: %w", err)
     }
-
+  log.Print("prodcut helper=",helpers)
     var responses []*models.ProductResponse
-    for _, p := range products {
-        category, _ := r.categoryRepo.FindByID(p.CategoryID)
-        user, _ := r.userRepo.FindByID(p.LenderID)
+    for _, h := range helpers {
+        lenderID, _ := strconv.ParseInt(h.LenderID, 10, 64)
+        categoryID, _ := strconv.ParseInt(h.CategoryID, 10, 64)
+        
+
+        var category models.Category
+        if r.categoryRepo != nil {
+            category, _ = r.categoryRepo.FindByID(categoryID)
+        }
+
+        var user models.User
+        if r.userRepo != nil {
+            u, err := r.userRepo.FindByID(lenderID)
+            if err != nil {
+                log.Printf("could not find user for lenderID=%d: %v", lenderID, err)
+            }
+            if u != nil {
+                user = *u
+            }
+        }
+
         responses = append(responses, &models.ProductResponse{
-            Product:  p,
+            Product: models.Product{
+                ID:          h.ID,
+                LenderID:    lenderID,
+                CategoryID:  categoryID,
+                Name:        h.Name,
+                Description: h.Description,
+                Duration:    h.Duration,
+                IsAvailable: h.IsAvailable,
+                CreatedAt:   h.CreatedAt,
+                ImageUrl:    h.ImageUrl,
+            },
             Category: category,
-            User:     *user,
+            User:     user,
         })
     }
+
     return responses, nil
 }
-
-// ✅ Update Product
 func (r *ProductDBRepo) Update(product *models.Product) error {
-    // Delete old copies and recreate
-    if err := r.Delete(product.ID); err != nil {
-        return err
-    }
-    return r.Create(product)
-}
+    ctx := context.TODO()
 
-// ✅ Delete Product
-func (r *ProductDBRepo) Delete(id int64) error {
-    // Delete all copies by scanning with begins_with(sk, ID#)
-    out, err := r.db.Client.Query(context.TODO(), &dynamodb.QueryInput{
-        TableName:              aws.String(r.db.Table),
-        KeyConditionExpression: aws.String("pk = :pk AND contains(sk, :id)"),
-        ExpressionAttributeValues: map[string]types.AttributeValue{
-            ":pk": &types.AttributeValueMemberS{Value: "PRODUCT"},
-            ":id": &types.AttributeValueMemberS{Value: fmt.Sprintf("%d", id)},
+    // Common update expression
+    updateExpr := "SET #n = :name, Description = :description, #dur = :duration, IsAvailable = :isAvailable, CategoryID = :categoryId, LenderID = :lenderId"
+
+    exprAttrNames := map[string]string{
+        "#n": "Name", 
+        "#dur": "Duration",
+    }
+
+    exprAttrValues := map[string]types.AttributeValue{
+        ":name":        &types.AttributeValueMemberS{Value: product.Name},
+        ":description": &types.AttributeValueMemberS{Value: product.Description},
+        ":duration":    &types.AttributeValueMemberN{Value: fmt.Sprintf("%d", product.Duration)},
+        ":isAvailable": &types.AttributeValueMemberBOOL{Value: product.IsAvailable},
+        ":categoryId":  &types.AttributeValueMemberS{Value: fmt.Sprintf("%d", product.CategoryID)},
+        ":lenderId":    &types.AttributeValueMemberS{Value: fmt.Sprintf("%d", product.LenderID)},
+    }
+
+    _, err := r.db.Client.UpdateItem(ctx, &dynamodb.UpdateItemInput{
+        TableName: aws.String(r.db.Table),
+        Key: map[string]types.AttributeValue{
+            "pk": &types.AttributeValueMemberS{Value: "PRODUCT"},
+            "sk": &types.AttributeValueMemberS{Value: fmt.Sprintf("PRODUCT#%d", product.ID)},
         },
+        UpdateExpression:          aws.String(updateExpr),
+        ExpressionAttributeNames:  exprAttrNames,
+        ExpressionAttributeValues: exprAttrValues,
     })
     if err != nil {
-        return fmt.Errorf("failed to find product copies: %w", err)
+        return fmt.Errorf("failed to update main product record: %w", err)
     }
 
-    for _, item := range out.Items {
-        var pk, sk string
-        attributevalue.Unmarshal(item["pk"], &pk)
-        attributevalue.Unmarshal(item["sk"], &sk)
-        _, _ = r.db.Client.DeleteItem(context.TODO(), &dynamodb.DeleteItemInput{
-            TableName: aws.String(r.db.Table),
-            Key: map[string]types.AttributeValue{
-                "pk": &types.AttributeValueMemberS{Value: pk},
-                "sk": &types.AttributeValueMemberS{Value: sk},
-            },
-        })
+    _, err = r.db.Client.UpdateItem(ctx, &dynamodb.UpdateItemInput{
+        TableName: aws.String(r.db.Table),
+        Key: map[string]types.AttributeValue{
+            "pk": &types.AttributeValueMemberS{Value: "PRODUCT"},
+            "sk": &types.AttributeValueMemberS{Value: fmt.Sprintf("LENDER#%d#ID#%d", product.LenderID, product.ID)},
+        },
+        UpdateExpression:          aws.String(updateExpr),
+        ExpressionAttributeNames:  exprAttrNames,
+        ExpressionAttributeValues: exprAttrValues,
+    })
+    if err != nil {
+        return fmt.Errorf("failed to update lender index record: %w", err)
     }
+
+    _, err = r.db.Client.UpdateItem(ctx, &dynamodb.UpdateItemInput{
+        TableName: aws.String(r.db.Table),
+        Key: map[string]types.AttributeValue{
+            "pk": &types.AttributeValueMemberS{Value: "PRODUCT"},
+            "sk": &types.AttributeValueMemberS{Value: fmt.Sprintf("NAME#%s#ID#%d", product.Name, product.ID)},
+        },
+        UpdateExpression:          aws.String(updateExpr),
+        ExpressionAttributeNames:  exprAttrNames,
+        ExpressionAttributeValues: exprAttrValues,
+    })
+    if err != nil {
+        return fmt.Errorf("failed to update name index record: %w", err)
+    }
+
     return nil
 }
 
-// ✅ Save (no-op)
+// func (r *ProductDBRepo) Delete(productID int64) error {
+//     out, err := r.db.Client.Query(context.TODO(), &dynamodb.QueryInput{
+//         TableName:              aws.String(r.db.Table),
+//         KeyConditionExpression: aws.String("pk = :pk"),
+//         FilterExpression:       aws.String("contains(sk, :id)"),
+//         ExpressionAttributeValues: map[string]types.AttributeValue{
+//             ":pk": &types.AttributeValueMemberS{Value: "PRODUCT"},
+//             ":id": &types.AttributeValueMemberS{Value: fmt.Sprintf("%d", productID)},
+//         },
+//     })
+//     log.Print("delte repo=",out.Items)
+//     if err != nil {
+//         return fmt.Errorf("failed to find product copies: %w", err)
+//     }
+
+//     if len(out.Items) == 0 {
+//         return errors.New("no product copies found")
+//     }
+
+//     // Delete each item
+//     for _, item := range out.Items {
+//         var pk, sk string
+//         if err := attributevalue.Unmarshal(item["pk"], &pk); err != nil {
+//             return fmt.Errorf("failed to unmarshal pk: %w", err)
+//         }
+//         if err := attributevalue.Unmarshal(item["sk"], &sk); err != nil {
+//             return fmt.Errorf("failed to unmarshal sk: %w", err)
+//         }
+
+//         _, delErr := r.db.Client.DeleteItem(context.TODO(), &dynamodb.DeleteItemInput{
+//             TableName: aws.String(r.db.Table),
+//             Key: map[string]types.AttributeValue{
+//                 "pk": &types.AttributeValueMemberS{Value: pk},
+//                 "sk": &types.AttributeValueMemberS{Value: sk},
+//             },
+//         })
+//         if delErr != nil {
+//             return fmt.Errorf("failed to delete item pk=%s sk=%s: %w", pk, sk, delErr)
+//         }
+
+//     }
+
+//     log.Print("delete successfull")
+
+//     return nil
+// }
+
+
+func (r *ProductDBRepo) Delete(productID int64) error {
+    out, err := r.db.Client.DeleteItem(context.TODO(), &dynamodb.DeleteItemInput{
+        TableName: aws.String(r.db.Table),
+        Key: map[string]types.AttributeValue{
+            "pk": &types.AttributeValueMemberS{Value: "PRODUCT"},
+            "sk": &types.AttributeValueMemberS{Value: fmt.Sprintf("PRODUCT#%d", productID)},
+        },
+    })
+    log.Print("out=",out)
+    if err != nil {
+        return fmt.Errorf("failed to delete product: %w", err)
+    }
+
+    log.Printf("Product deleted successfully: PRODUCT#%d", productID)
+    return nil
+}
+
 func (r *ProductDBRepo) Save() error {
     return nil
 }

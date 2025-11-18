@@ -25,6 +25,8 @@ func init() {
 	if err != nil {
 		panic("Failed to connect to DynamoDB: " + err.Error())
 	}
+
+	lenderRepo = lender_repo.NewLenderDBRepo(dynamo)
 	userRepo := user_repo.NewUserDBRepo(dynamo, lenderRepo)
 	userService = user_service.NewUserService(userRepo)
 }
@@ -37,7 +39,7 @@ func Handler(ctx context.Context, event events.APIGatewayProxyRequest, userCtx *
 	}
 
 	if err := userService.DeleteUserByID(userID); err != nil {
-		return response.LambdaResponse(http.StatusInternalServerError, nil, "Failed to delete user"), nil
+		return response.LambdaResponse(http.StatusInternalServerError, nil, err.Error()), nil
 	}
 
 	return response.LambdaResponse(http.StatusOK, map[string]interface{}{

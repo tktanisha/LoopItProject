@@ -25,6 +25,7 @@ func init() {
 	if err != nil {
 		panic("Failed to connect to DynamoDB: " + err.Error())
 	}
+	lenderRepo = lender_repo.NewLenderDBRepo(dynamo)
 	userRepo := user_repo.NewUserDBRepo(dynamo, lenderRepo)
 	userService = user_service.NewUserService(userRepo)
 }
@@ -38,7 +39,7 @@ func Handler(ctx context.Context, event events.APIGatewayProxyRequest, userCtx *
 
 	user, err := userService.GetUserByID(userID)
 	if err != nil {
-		return response.LambdaResponse(http.StatusInternalServerError, nil, "Failed to fetch user"), nil
+		return response.LambdaResponse(http.StatusInternalServerError, nil, err.Error()), nil
 	}
 	if user == nil {
 		return response.LambdaResponse(http.StatusNotFound, nil, "User not found"), nil
@@ -47,6 +48,7 @@ func Handler(ctx context.Context, event events.APIGatewayProxyRequest, userCtx *
 	return response.LambdaResponse(http.StatusOK, map[string]interface{}{
 		"status": true,
 		"user":   user,
+		"message": "successfully fetched user",
 	}, ""), nil
 }
 

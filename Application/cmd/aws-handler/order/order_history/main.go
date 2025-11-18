@@ -33,7 +33,10 @@ func init() {
         panic("Failed to connect to DynamoDB: " + err.Error())
     }
 
+
+    lenderRepo = lender_repo.NewLenderDBRepo(dynamo)
     userRepo := user_repo.NewUserDBRepo(dynamo,lenderRepo)
+    categoryRepo = category_repo.NewCategoryDBRepo(dynamo)
     productRepo := product_repo.NewProductDBRepo(dynamo,categoryRepo,userRepo)
     orderRepo := order_repo.NewOrderDBRepo(dynamo,productRepo)
     returnRepo := return_request_repo.NewReturnRequestDBRepo(dynamo)
@@ -55,7 +58,7 @@ func Handler(ctx context.Context, event events.APIGatewayProxyRequest, userCtx *
 
     orders, err := orderService.GetOrderHistory(userCtx, filterStatus)
     if err != nil {
-        return response.LambdaResponse(http.StatusInternalServerError, nil, "Failed to fetch order history"), nil
+        return response.LambdaResponse(http.StatusInternalServerError, nil, err.Error()), nil
     }
 
     var orderResponses []*models.OrderDto

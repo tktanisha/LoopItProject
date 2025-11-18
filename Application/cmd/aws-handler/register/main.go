@@ -27,7 +27,7 @@ type registerRequest struct {
     Password    string `json:"password"`
     PhoneNumber string `json:"phoneNumber"`
     Address     string `json:"address"`
-    SocietyID   int64    `json:"societyId"`
+    SocietyID   int64  `json:"societyId"`
 }
 
 var authService auth_service.AuthServiceInterface

@@ -3,6 +3,7 @@ package product_service
 import (
 	"errors"
 	"fmt"
+	"log"
 	"loopit/internal/constants"
 	"loopit/internal/enums"
 	"loopit/internal/models"
@@ -41,8 +42,10 @@ func (p *ProductService) GetProductByID(id int64) (*models.ProductResponse, erro
 
 	product, err := p.productRepo.FindByID(id)
 	if err != nil {
+		log.Print("err in service=",err)
 		return nil, errors.New("product not found")
 	}
+	log.Print("product in service=",product)
 
 	return product, nil
 }
@@ -114,17 +117,17 @@ func (p *ProductService) DeleteProduct(id int64, userCtx *models.UserContext) er
 		return errors.New("only lenders can delete products")
 	}
 	product, err := p.productRepo.FindByID(id)
-
+    log.Print("error after find by id=",err)
 	if err != nil {
 		return errors.New("product not found")
 
 	}
 	if product.Product.LenderID != userCtx.ID {
-
 		return errors.New("you can only delete your own products")
 	}
 	err = p.productRepo.Delete(id)
 	if err != nil {
+		log.Print("error in delete service=",err)
 		return err
 	}
 	return nil

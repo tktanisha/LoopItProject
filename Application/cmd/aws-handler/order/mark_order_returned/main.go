@@ -32,12 +32,16 @@ func init() {
         panic("Failed to connect to DynamoDB: " + err.Error())
     }
 
+
+    lenderRepo = lender_repo.NewLenderDBRepo(dynamo)
     userRepo := user_repo.NewUserDBRepo(dynamo,lenderRepo)
+    categoryRepo = category_repo.NewCategoryDBRepo(dynamo)
     productRepo := product_repo.NewProductDBRepo(dynamo,categoryRepo,userRepo)
     orderRepo := order_repo.NewOrderDBRepo(dynamo,productRepo)
     returnRepo := return_request_repo.NewReturnRequestDBRepo(dynamo)
 
     orderService = order_service.NewOrderService(orderRepo, returnRepo, productRepo)
+    productService = product_service.NewProductService(productRepo, userRepo)
 }
 
 func Handler(ctx context.Context, event events.APIGatewayProxyRequest, userCtx *models.UserContext) (events.APIGatewayProxyResponse, error) {
@@ -48,7 +52,7 @@ func Handler(ctx context.Context, event events.APIGatewayProxyRequest, userCtx *
     }
 
     if err := orderService.MarkOrderAsReturned(orderID, userCtx); err != nil {
-        return response.LambdaResponse(http.StatusBadRequest, nil, "Failed to update order status"), nil
+        return response.LambdaResponse(http.StatusBadRequest, nil, err.Error()), nil
     }
 
     return response.LambdaResponse(http.StatusOK, map[string]interface{}{

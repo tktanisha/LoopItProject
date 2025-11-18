@@ -122,6 +122,7 @@ import (
 	"errors"
 	"fmt"
 	"loopit/internal/db"
+	"loopit/internal/enums/return_request_status"
 	"loopit/internal/models"
 	"time"
 
@@ -187,6 +188,7 @@ func (r *ReturnRequestDBRepo) UpdateReturnRequestStatus(id int64, newStatus stri
 }
 
 func (r *ReturnRequestDBRepo) GetAllReturnRequests(filterStatuses []string) ([]models.ReturnRequest, error) {
+    // Query DynamoDB for all return requests
     out, err := r.db.Client.Query(context.TODO(), &dynamodb.QueryInput{
         TableName:              aws.String(r.db.Table),
         KeyConditionExpression: aws.String("pk = :pk"),
@@ -198,27 +200,49 @@ func (r *ReturnRequestDBRepo) GetAllReturnRequests(filterStatuses []string) ([]m
         return nil, fmt.Errorf("failed to query return requests: %w", err)
     }
 
-    var requests []models.ReturnRequest
-    if err := attributevalue.UnmarshalListOfMaps(out.Items, &requests); err != nil {
+    // Helper struct to handle Status as string
+    type requestHelper struct {
+        ID          int64     `dynamodbav:"ID"`
+        OrderID     int64     `dynamodbav:"OrderID"`
+        RequestedBy int64     `dynamodbav:"RequestedBy"`
+        StatusStr   string    `dynamodbav:"Status"`
+        CreatedAt   time.Time `dynamodbav:"CreatedAt"`
+    }
+
+    var helpers []requestHelper
+    if err := attributevalue.UnmarshalListOfMaps(out.Items, &helpers); err != nil {
         return nil, fmt.Errorf("failed to unmarshal return requests: %w", err)
     }
 
-    // Filter by status in memory (since no GSI)
-    if len(filterStatuses) > 0 {
-        var filtered []models.ReturnRequest
-        statusMap := make(map[string]bool)
-        for _, s := range filterStatuses {
-            statusMap[s] = true
-        }
-        for _, rr := range requests {
-            if statusMap[rr.Status.String()] {
-                filtered = append(filtered, rr)
-            }
-        }
-        return filtered, nil
+    // Convert helper to actual model and apply filtering
+    var filtered []models.ReturnRequest
+    statusMap := make(map[string]bool)
+    for _, s := range filterStatuses {
+        statusMap[s] = true
     }
 
-    return requests, nil
+    for _, h := range helpers {
+        status, err := return_request_status.ParseStatus(h.StatusStr)
+        if err != nil {
+            continue // skip invalid status
+        }
+
+        rr := models.ReturnRequest{
+            ID:          h.ID,
+            OrderID:     h.OrderID,
+            RequestedBy: h.RequestedBy,
+            Status:      status,
+            CreatedAt:   h.CreatedAt,
+        }
+
+        if len(filterStatuses) > 0 && !statusMap[rr.Status.String()] {
+            continue
+        }
+
+        filtered = append(filtered, rr)
+    }
+
+    return filtered, nil
 }
 
 func (r *ReturnRequestDBRepo) GetReturnRequestByID(id int64) (models.ReturnRequest, error) {
@@ -238,10 +262,33 @@ func (r *ReturnRequestDBRepo) GetReturnRequestByID(id int64) (models.ReturnReque
         return models.ReturnRequest{}, errors.New("return request not found")
     }
 
-    var rr models.ReturnRequest
-    if err := attributevalue.UnmarshalMap(out.Item, &rr); err != nil {
+    // Helper struct for unmarshalling
+    type requestHelper struct {
+        ID          int64     `dynamodbav:"ID"`
+        OrderID     int64     `dynamodbav:"OrderID"`
+        RequestedBy int64     `dynamodbav:"RequestedBy"`
+        StatusStr   string    `dynamodbav:"Status"`
+        CreatedAt   time.Time `dynamodbav:"CreatedAt"`
+    }
+
+    var h requestHelper
+    if err := attributevalue.UnmarshalMap(out.Item, &h); err != nil {
         return models.ReturnRequest{}, fmt.Errorf("failed to unmarshal return request: %w", err)
     }
+
+    status, err := return_request_status.ParseStatus(h.StatusStr)
+    if err != nil {
+        return models.ReturnRequest{}, fmt.Errorf("invalid status value: %w", err)
+    }
+
+    rr := models.ReturnRequest{
+        ID:          h.ID,
+        OrderID:     h.OrderID,
+        RequestedBy: h.RequestedBy,
+        Status:      status,
+        CreatedAt:   h.CreatedAt,
+    }
+
     return rr, nil
 }
 

@@ -10,6 +10,7 @@ import (
 	"loopit/internal/models"
 	"loopit/internal/repository/category_repo"
 	"loopit/internal/repository/feedback_repo"
+	"loopit/internal/repository/lender_repo"
 	"loopit/internal/repository/order_repo"
 	"loopit/internal/repository/product_repo"
 	"loopit/internal/repository/user_repo"
@@ -29,7 +30,10 @@ func init() {
     if err != nil {
         panic("Failed to connect to DynamoDB: " + err.Error())
     }
-
+    
+    lenderRepo:= lender_repo.NewLenderDBRepo(dynamo)
+    userRepo = user_repo.NewUserDBRepo(dynamo,lenderRepo)
+    categoryRepo = category_repo.NewCategoryDBRepo(dynamo)
     feedbackRepo := feedback_repo.NewFeedBackDBRepo(dynamo)
     productRepo := product_repo.NewProductDBRepo(dynamo,categoryRepo,userRepo)
     orderRepo := order_repo.NewOrderDBRepo(dynamo,productRepo)

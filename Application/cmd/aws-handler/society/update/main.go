@@ -54,7 +54,7 @@ func Handler(ctx context.Context, event events.APIGatewayProxyRequest, userCtx *
 
 	if err := societyService.UpdateSociety(societyID, payload.Name, payload.Location, payload.Pincode); err != nil {
 		log.Print("after updating ")
-		return response.LambdaResponse(http.StatusInternalServerError, nil, "Failed to update society"), nil
+		return response.LambdaResponse(http.StatusInternalServerError, nil, err.Error()), nil
 	}
     
 	return response.LambdaResponse(http.StatusOK, map[string]interface{}{

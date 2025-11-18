@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"log"
 	"net/http"
 	"strconv"
 
@@ -35,6 +36,7 @@ func init() {
 
     buyerReqRepo := buyer_request_repo.NewBuyerRequestDBRepo(dynamo)
     categoryRepo := category_repo.NewCategoryDBRepo(dynamo)
+    lenderRepo = lender_repo.NewLenderDBRepo(dynamo)
     userRepo := user_repo.NewUserDBRepo(dynamo,lenderRepo)
     productRepo := product_repo.NewProductDBRepo(dynamo,categoryRepo,userRepo)
     orderRepo := order_repo.NewOrderDBRepo(dynamo,productRepo)
@@ -45,6 +47,7 @@ func init() {
 func Handler(ctx context.Context, event events.APIGatewayProxyRequest, userCtx *models.UserContext) (events.APIGatewayProxyResponse, error) {
     reqIDStr := event.PathParameters["requestId"]
     reqID, err := strconv.ParseInt(reqIDStr, 10, 64)
+    log.Print(reqID)
     if err != nil {
         return response.LambdaResponse(http.StatusBadRequest, nil, "Invalid buyer request ID"), nil
     }

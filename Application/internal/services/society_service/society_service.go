@@ -50,7 +50,7 @@ func (s *SocietyService) UpdateSociety(id int64, name, location, pincode string)
 
 		return err
 	}
-	log.Print("after repo ")
+	log.Print("after repo= ",society)
 	society.Name = name
 	society.Location = location
 	society.Pincode = pincode

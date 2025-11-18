@@ -210,22 +210,23 @@ func (r *SocietyDBRepo) FindByID(id int64) (models.Society, error) {
     if err := attributevalue.UnmarshalMap(out.Item, &society); err != nil {
         return models.Society{}, err
     }
-    log.Print("end in id")
+    log.Print("end in id=",society)
     return society, nil
 }
 
-// ✅ Update Society
+
 func (r *SocietyDBRepo) Update(society models.Society) error {
-    log.Print("start in update")
+    log.Print("start in update=",society)
     _, err := r.db.Client.UpdateItem(context.TODO(), &dynamodb.UpdateItemInput{
         TableName: aws.String(r.db.Table),
         Key: map[string]types.AttributeValue{
             "pk": &types.AttributeValueMemberS{Value: "SOCIETY"},
             "sk": &types.AttributeValueMemberS{Value: fmt.Sprintf("ID#%d", society.ID)},
         },
-        UpdateExpression: aws.String("SET #n = :name, Location = :location, Pincode = :pincode"),
+        UpdateExpression: aws.String("SET #n = :name, #loc = :location, Pincode = :pincode"),
         ExpressionAttributeNames: map[string]string{
             "#n": "Name",
+            "#loc": "Location",
         },
         ExpressionAttributeValues: map[string]types.AttributeValue{
             ":name":    &types.AttributeValueMemberS{Value: society.Name},
@@ -233,7 +234,6 @@ func (r *SocietyDBRepo) Update(society models.Society) error {
             ":pincode": &types.AttributeValueMemberS{Value: society.Pincode},
         },
     })
-    log.Print("end in update")
     return err
 }
 

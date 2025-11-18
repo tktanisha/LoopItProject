@@ -31,16 +31,16 @@ func NewFeedbackService(
 }
 
 func (s *FeedbackService) GiveFeedback(orderID int64, feedbackText string, rating int, userCtx *models.UserContext) error {
-	log.Print(fmt.Sprintf("User %d attempting to give feedback for order %d", userCtx.ID, orderID))
+	log.Printf(fmt.Sprintf("User %d attempting to give feedback for order %d", userCtx.ID, orderID))
 
 	order, err := s.order_repo.GetOrderByID(orderID)
 	if err != nil {
-		log.Print(fmt.Sprintf("Order not found for ID %d, error: %v", orderID, err))
+		log.Printf(fmt.Sprintf("Order not found for ID %d, error: %v", orderID, err))
 		return err
 	}
 	product, err := s.product_repo.FindByID(order.ProductID)
 	if err != nil {
-		log.Print(fmt.Sprintf("Product not found for order %d, productID %d, error: %v", orderID, order.ProductID, err))
+		log.Printf(fmt.Sprintf("Product not found for order %d, productID %d, error: %v", orderID, order.ProductID, err))
 		return err
 	}
 

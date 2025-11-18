@@ -22,7 +22,7 @@ import (
 
 var productService product_service.ProductServiceInterface
 var categoryRepo category_repo.CategoryRepo
-var LenderRepo lender_repo.LenderRepo
+var lenderRepo lender_repo.LenderRepo
 	
 
 func init() {
@@ -30,7 +30,9 @@ func init() {
     if err != nil {
         panic("Failed to connect to DynamoDB: " + err.Error())
     }
-    userRepo := user_repo.NewUserDBRepo(dynamo,LenderRepo)
+    lenderRepo = lender_repo.NewLenderDBRepo(dynamo) 
+    userRepo := user_repo.NewUserDBRepo(dynamo,lenderRepo)
+    categoryRepo = category_repo.NewCategoryDBRepo(dynamo)
     productRepo := product_repo.NewProductDBRepo(dynamo,categoryRepo ,userRepo)
     productService = product_service.NewProductService(productRepo, userRepo)
 }
@@ -49,7 +51,7 @@ func Handler(ctx context.Context, event events.APIGatewayProxyRequest, userCtx *
 
 
     if err := productService.UpdateProduct(id, product.Name, product.Description, product.CategoryID, userCtx); err != nil {
-        return response.LambdaResponse(http.StatusForbidden, nil, "Failed to update product"), nil
+        return response.LambdaResponse(http.StatusForbidden, nil, err.Error()), nil
     }
 
     return response.LambdaResponse(http.StatusOK, map[string]interface{}{
