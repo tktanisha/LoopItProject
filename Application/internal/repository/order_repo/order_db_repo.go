@@ -1,179 +1,3 @@
-// package order_repo
-
-// import (
-// 	"database/sql"
-// 	"errors"
-// 	"fmt"
-// 	"loopit/internal/db"
-// 	"loopit/internal/enums/order_status"
-// 	"loopit/internal/models"
-// 	"loopit/internal/repository/product_repo"
-// 	"time"
-
-// 	"github.com/lib/pq"
-// )
-
-// type OrderDBRepo struct {
-// 	db          *db.DynamoClient
-// 	productRepo product_repo.ProductRepo
-// }
-
-// func NewOrderDBRepo(db *db.DynamoClient, productRepo product_repo.ProductRepo) *OrderDBRepo {
-// 	return &OrderDBRepo{
-// 		db:          db,
-// 		productRepo: productRepo,
-
-// 	}
-// }
-
-// // CreateOrder inserts a new order into the database
-// func (r *OrderDBRepo) CreateOrder(order models.Order) error {
-// 	query := `
-//     INSERT INTO orders (product_id, user_id, start_date, end_date, total_amount, security_amount, status, created_at)
-//     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-//     RETURNING id
-//     `
-// 	err := r.db.QueryRow(query, order.ProductID, order.UserID, order.StartDate, order.EndDate, order.TotalAmount, order.SecurityAmount, order.Status.String(), time.Now()).Scan(&order.ID)
-// 	if err != nil {
-// 		r.log.Error(fmt.Sprintf("DB error creating order: %v", err))
-// 		return err
-// 	}
-// 	return nil
-// }
-
-// // UpdateOrderStatus updates the status of an order
-// func (r *OrderDBRepo) UpdateOrderStatus(orderID int64, newStatus string) error {
-// 	var err error
-// 	var result sql.Result
-
-// 	if newStatus == "Returned" {
-// 		currentTime := time.Now()
-
-// 		result, err = r.db.Exec(
-// 			`UPDATE orders SET status=$1, end_date=$2 WHERE id=$3`,
-// 			newStatus,
-// 			currentTime,
-// 			orderID,
-// 		)
-// 	} else {
-// 		result, err = r.db.Exec(
-// 			`UPDATE orders SET status=$1 WHERE id=$2`,
-// 			newStatus,
-// 			orderID,
-// 		)
-// 	}
-
-// 	if err != nil {
-// 		r.log.Error(fmt.Sprintf("DB error updating order %d to status %s: %v", orderID, newStatus, err))
-// 		return err
-// 	}
-
-// 	rowsAffected, _ := result.RowsAffected()
-// 	if rowsAffected == 0 {
-// 		r.log.Warning(fmt.Sprintf("DB: No order found to update for id %d", orderID))
-// 		return errors.New("order not found")
-// 	}
-
-// 	return nil
-// }
-
-// // GetOrderHistory returns orders for a user, optionally filtered by status
-// func (r *OrderDBRepo) GetOrderHistory(userID int64, filterStatuses []string) ([]*models.Order, error) {
-// 	query := "SELECT id, product_id, user_id, start_date, end_date, total_amount, security_amount, status, created_at FROM orders WHERE user_id=$1"
-// 	args := []any{userID}
-
-// 	if len(filterStatuses) > 0 {
-// 		query += " AND status = ANY($2)"
-// 		args = append(args, pq.Array(filterStatuses))
-// 	}
-
-// 	rows, err := r.db.Query(query, args...)
-// 	if err != nil {
-// 		r.log.Error(fmt.Sprintf("DB error fetching order history for user %d: %v", userID, err))
-// 		return nil, err
-// 	}
-// 	defer rows.Close()
-
-// 	var orders []*models.Order
-// 	var statusStr string
-// 	for rows.Next() {
-// 		var o models.Order
-// 		if err := rows.Scan(&o.ID, &o.ProductID, &o.UserID, &o.StartDate, &o.EndDate, &o.TotalAmount, &o.SecurityAmount, &statusStr, &o.CreatedAt); err != nil {
-// 			r.log.Warning(fmt.Sprintf("DB warning: could not scan order row: %v", err))
-// 			continue
-// 		}
-// 		o.Status, err = order_status.ParseStatus(statusStr)
-// 		if err != nil {
-// 			r.log.Warning(fmt.Sprintf("DB warning: could not parse order status: %v", err))
-// 			continue
-// 		}
-// 		orders = append(orders, &o)
-// 	}
-// 	return orders, nil
-// }
-
-// // GetLenderOrders returns orders for products owned by a lender
-// func (r *OrderDBRepo) GetLenderOrders(userID int64) ([]*models.Order, error) {
-// 	query := `
-//     SELECT o.id, o.product_id, o.user_id, o.start_date, o.end_date, o.total_amount, o.security_amount, o.status, o.created_at
-//     FROM orders o
-//     JOIN products p ON o.product_id = p.id
-//     WHERE p.lender_id=$1
-//     `
-// 	rows, err := r.db.Query(query, userID)
-// 	fmt.Println("rows==", *rows)
-// 	if err != nil {
-// 		r.log.Error(fmt.Sprintf("DB error fetching lender orders for user %d: %v", userID, err))
-// 		return nil, err
-// 	}
-// 	defer rows.Close()
-
-// 	var orders []*models.Order
-// 	var statusStr string
-// 	for rows.Next() {
-// 		var o models.Order
-// 		if err := rows.Scan(&o.ID, &o.ProductID, &o.UserID, &o.StartDate, &o.EndDate, &o.TotalAmount, &o.SecurityAmount, &statusStr, &o.CreatedAt); err != nil {
-// 			r.log.Warning(fmt.Sprintf("DB warning: could not scan lender order row: %v", err))
-// 			continue
-// 		}
-// 		o.Status, err = order_status.ParseStatus(statusStr)
-// 		if err != nil {
-// 			r.log.Warning(fmt.Sprintf("DB warning: could not parse lender order status: %v", err))
-// 			continue
-// 		}
-// 		orders = append(orders, &o)
-// 		fmt.Println("orders in repo=", &orders)
-// 	}
-// 	return orders, nil
-// }
-
-// // GetOrderByID returns a single order by ID
-// func (r *OrderDBRepo) GetOrderByID(orderID int64) (*models.Order, error) {
-// 	row := r.db.QueryRow("SELECT id, product_id, user_id, start_date, end_date, total_amount, security_amount, status, created_at FROM orders WHERE id=$1", orderID)
-// 	var o models.Order
-// 	var statusStr string
-// 	if err := row.Scan(&o.ID, &o.ProductID, &o.UserID, &o.StartDate, &o.EndDate, &o.TotalAmount, &o.SecurityAmount, &statusStr, &o.CreatedAt); err != nil {
-// 		if errors.Is(err, sql.ErrNoRows) {
-// 			r.log.Warning(fmt.Sprintf("DB: No order found with id %d", orderID))
-// 			return nil, errors.New("order not found")
-// 		}
-// 		r.log.Error(fmt.Sprintf("DB error fetching order by id %d: %v", orderID, err))
-// 		return nil, err
-// 	}
-// 	status, err := order_status.ParseStatus(statusStr)
-// 	if err != nil {
-// 		r.log.Warning(fmt.Sprintf("DB warning: could not parse order status for id %d: %v", orderID, err))
-// 		return nil, err
-// 	}
-// 	o.Status = status
-// 	return &o, nil
-// }
-
-// // Save is a no-op for Postgres
-// func (r *OrderDBRepo) Save() error {
-// 	return nil
-// }
-
 package order_repo
 
 import (
@@ -205,53 +29,6 @@ func NewOrderDBRepo(db *db.DynamoClient, productRepo product_repo.ProductRepo) *
     }
 }
 
-// ✅ CreateOrder
-// func (r *OrderDBRepo) CreateOrder(order models.Order) error {
-//     order.ID = time.Now().UnixNano()
-//     order.CreatedAt = time.Now()
-
-//     // Fetch lender ID from product
-//     product, err := r.productRepo.FindByID(order.ProductID)
-//     if err != nil {
-//         return fmt.Errorf("failed to fetch product for lender info: %w", err)
-//     }
-//     lenderID := product.Product.LenderID
-
-//     base := map[string]types.AttributeValue{
-//         "ID":             &types.AttributeValueMemberN{Value: fmt.Sprintf("%d", order.ID)},
-//         "ProductID":      &types.AttributeValueMemberN{Value: fmt.Sprintf("%d", order.ProductID)},
-//         "UserID":         &types.AttributeValueMemberN{Value: fmt.Sprintf("%d", order.UserID)},
-//         "StartDate":      &types.AttributeValueMemberS{Value: order.StartDate.Format(time.RFC3339)},
-//         "EndDate":        &types.AttributeValueMemberS{Value: order.EndDate.Format(time.RFC3339)},
-//         "TotalAmount":    &types.AttributeValueMemberN{Value: fmt.Sprintf("%f", order.TotalAmount)},
-//         "SecurityAmount": &types.AttributeValueMemberN{Value: fmt.Sprintf("%f", order.SecurityAmount)},
-//         "Status":         &types.AttributeValueMemberS{Value: order.Status.String()},
-//         "CreatedAt":      &types.AttributeValueMemberS{Value: order.CreatedAt.Format(time.RFC3339)},
-//     }
-
-//     // Items for access patterns
-//     items := []map[string]types.AttributeValue{
-//         mergeMap(base, map[string]types.AttributeValue{
-//             "pk": &types.AttributeValueMemberS{Value: fmt.Sprintf("USER#%d", order.UserID)},
-//             "sk": &types.AttributeValueMemberS{Value: fmt.Sprintf("ORDER#ID#%d", order.ID)},
-//         }),
-//         mergeMap(base, map[string]types.AttributeValue{
-//             "pk": &types.AttributeValueMemberS{Value: fmt.Sprintf("LENDER#%d", lenderID)},
-//             "sk": &types.AttributeValueMemberS{Value: fmt.Sprintf("ORDER#ID#%d", order.ID)},
-//         }),
-//     }
-
-//     for _, item := range items {
-//         _, err := r.db.Client.PutItem(context.TODO(), &dynamodb.PutItemInput{
-//             TableName: aws.String(r.db.Table),
-//             Item:      item,
-//         })
-//         if err != nil {
-//             return fmt.Errorf("failed to create order item: %w", err)
-//         }
-//     }
-//     return nil
-// }
 
 func (r *OrderDBRepo) CreateOrder(order models.Order) error {
     order.ID = time.Now().UnixNano()
@@ -309,35 +86,56 @@ func (r *OrderDBRepo) CreateOrder(order models.Order) error {
 }
 
 
-// ✅ UpdateOrderStatus
 func (r *OrderDBRepo) UpdateOrderStatus(orderID int64, newStatus string) error {
-   
+    ctx := context.TODO()
+
+    // 1. Fetch order details
     order, err := r.GetOrderByID(orderID)
     if err != nil {
         return err
     }
-    product, _ := r.productRepo.FindByID(order.ProductID)
+
+    // 2. Fetch product to get lender ID
+    product, err := r.productRepo.FindByID(order.ProductID)
+    if err != nil {
+        return fmt.Errorf("failed to fetch product for order: %w", err)
+    }
     lenderID := product.Product.LenderID
 
+    // 3. Prepare all keys to update
     keys := []map[string]types.AttributeValue{
-        {"pk": &types.AttributeValueMemberS{Value: fmt.Sprintf("USER#%d", order.UserID)}, "sk": &types.AttributeValueMemberS{Value: fmt.Sprintf("ORDER#ID#%d", orderID)}},
-        {"pk": &types.AttributeValueMemberS{Value: fmt.Sprintf("LENDER#%d", lenderID)}, "sk": &types.AttributeValueMemberS{Value: fmt.Sprintf("ORDER#ID#%d", orderID)}},
+        { // User index
+            "pk": &types.AttributeValueMemberS{Value: fmt.Sprintf("USER#%d", order.UserID)},
+            "sk": &types.AttributeValueMemberS{Value: fmt.Sprintf("ORDER#ID#%d", orderID)},
+        },
+        { // Lender index
+            "pk": &types.AttributeValueMemberS{Value: fmt.Sprintf("LENDER#%d", lenderID)},
+            "sk": &types.AttributeValueMemberS{Value: fmt.Sprintf("ORDER#ID#%d", orderID)},
+        },
+        { // Primary order record
+            "pk": &types.AttributeValueMemberS{Value: "ORDER"},
+            "sk": &types.AttributeValueMemberS{Value: fmt.Sprintf("ORDER#%d", orderID)},
+        },
     }
 
+    // 4. Update Status in all keys
     for _, key := range keys {
-        _, err := r.db.Client.UpdateItem(context.TODO(), &dynamodb.UpdateItemInput{
+        _, err := r.db.Client.UpdateItem(ctx, &dynamodb.UpdateItemInput{
             TableName: aws.String(r.db.Table),
             Key:       key,
             UpdateExpression: aws.String("SET #s = :status"),
-            ExpressionAttributeNames: map[string]string{"#s": "Status"},
+            ExpressionAttributeNames: map[string]string{
+                "#s": "Status",
+            },
             ExpressionAttributeValues: map[string]types.AttributeValue{
                 ":status": &types.AttributeValueMemberS{Value: newStatus},
             },
         })
         if err != nil {
-            return fmt.Errorf("failed to update order status: %w", err)
+            return fmt.Errorf("failed to update order status for key %+v: %w", key, err)
         }
     }
+
     return nil
 }
 

@@ -67,7 +67,6 @@ func RegisterHandler(ctx context.Context, event events.APIGatewayProxyRequest) (
         return response.LambdaResponse(http.StatusBadRequest, nil, err.Error()), nil
     }
 
-    // Register user
     err := authService.Register(&models.User{
         FullName:     req.FullName,
         Email:        req.Email,

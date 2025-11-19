@@ -8,7 +8,7 @@ type UserRepo interface {
 	FindByID(userID int64) (*models.User, error)
 	FindByEmail(email string) (*models.User, error)
 	 Create(user *models.User) error
-	//BecomeLender(userID int) error
+	BecomeLender(userID int64) error
 	DeleteByID(userID int64) error
 	
 }

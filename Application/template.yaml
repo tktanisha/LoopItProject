@@ -255,23 +255,23 @@ Resources:
         - DynamoDBCrudPolicy:
             TableName: !ImportValue Loopit-DynamoTableName
 
-  # BecomeLender:
-  #   Type: AWS::Serverless::Function
-  #   Metadata:
-  #     BuildMethod: go1.x
-  #   Properties:
-  #     CodeUri: ./cmd/aws-handler/user/become_lender
-  #     Events:
-  #       ApiEvent:
-  #         Type: Api
-  #         Properties:
-  #           Method: patch
-  #           Path: /users/become-lender
-  #           RestApiId: !Ref Api
-  #     Policies:
-  #       - AWSLambdaBasicExecutionRole
-  #       - DynamoDBCrudPolicy:
-  #           TableName: !ImportValue Loopit-DynamoTableName
+  BecomeLender:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: go1.x
+    Properties:
+      CodeUri: ./cmd/aws-handler/user/become_lender
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Method: patch
+            Path: /users/become-lender
+            RestApiId: !Ref Api
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - DynamoDBCrudPolicy:
+            TableName: !ImportValue Loopit-DynamoTableName
 
   #product lambdas
 
