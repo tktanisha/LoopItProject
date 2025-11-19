@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"net/http"
 
 	"loopit/internal/api/middleware"
@@ -31,9 +30,7 @@ func init() {
 }
 
 func Handler(ctx context.Context, event events.APIGatewayProxyRequest, userCtx *models.UserContext) (events.APIGatewayProxyResponse, error) {
-	if err := json.Unmarshal([]byte(event.Body), &userCtx); err != nil {
-		return response.LambdaResponse(http.StatusBadRequest, nil, "Invalid user context"), nil
-	}
+	
 
 	if err := userService.BecomeLender(userCtx); err != nil {
 		return response.LambdaResponse(http.StatusBadRequest, nil, err.Error()), nil

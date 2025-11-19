@@ -11,7 +11,7 @@ var jwtKey = []byte("secret_key")
 
 type Claims struct {
 	jwt.RegisteredClaims
-	UserID int64    `json:"user_id"`
+	UserID int64    `json:"user_id,string"`
 	Role   string `json:"role"`
 }
 

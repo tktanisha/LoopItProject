@@ -291,33 +291,79 @@ func (r *BuyerRequestDBRepo) UpdateStatusBuyerRequest(id int64, newStatus string
         return fmt.Errorf("invalid id: %d", id)
     }
 
-    skValue := fmt.Sprintf("ID#%d", id)
+    ctx := context.TODO()
 
-    log.Print("in update repo beofre updtae")
+    // 1. Fetch existing request to get old status
+    key := map[string]types.AttributeValue{
+        "pk": &types.AttributeValueMemberS{Value: "BUYREQUEST"},
+        "sk": &types.AttributeValueMemberS{Value: fmt.Sprintf("ID#%d", id)},
+    }
 
-    out, err := r.db.Client.UpdateItem(context.TODO(), &dynamodb.UpdateItemInput{
+    out, err := r.db.Client.GetItem(ctx, &dynamodb.GetItemInput{
         TableName: aws.String(r.db.Table),
-        Key: map[string]types.AttributeValue{
-            "pk": &types.AttributeValueMemberS{Value: "BUYREQUEST"},
-            "sk": &types.AttributeValueMemberS{Value: skValue},
-        },
+        Key:       key,
+    })
+    if err != nil {
+        return fmt.Errorf("failed to fetch buyer request: %w", err)
+    }
+    if out.Item == nil {
+        return fmt.Errorf("buyer request not found")
+    }
+
+    type helper struct {
+        Status string `dynamodbav:"Status"`
+    }
+    var h helper
+    if err := attributevalue.UnmarshalMap(out.Item, &h); err != nil {
+        return fmt.Errorf("failed to unmarshal buyer request: %w", err)
+    }
+
+    oldStatus := h.Status
+
+    // 2. Update main item
+    _, err = r.db.Client.UpdateItem(ctx, &dynamodb.UpdateItemInput{
+        TableName: aws.String(r.db.Table),
+        Key:       key,
         UpdateExpression: aws.String("SET #s = :status"),
-        ExpressionAttributeNames: map[string]string{
-            "#s": "Status",
-        },
+        ExpressionAttributeNames: map[string]string{"#s": "Status"},
         ExpressionAttributeValues: map[string]types.AttributeValue{
             ":status": &types.AttributeValueMemberS{Value: newStatus},
         },
     })
-     log.Print("in update repo after updtae=",out)
     if err != nil {
-        log.Print("error in repo= in update statsu",err )
-        return fmt.Errorf("failed to update buyer request status: %w", err)
+        return fmt.Errorf("failed to update main buyer request: %w", err)
     }
-    log.Print("end of repo")
+
+    // 3. Delete old status index
+    _, err = r.db.Client.DeleteItem(ctx, &dynamodb.DeleteItemInput{
+        TableName: aws.String(r.db.Table),
+        Key: map[string]types.AttributeValue{
+            "pk": &types.AttributeValueMemberS{Value: "BUYREQUEST"},
+            "sk": &types.AttributeValueMemberS{Value: fmt.Sprintf("STATUS#%s#ID#%d", oldStatus, id)},
+        },
+    })
+    if err != nil {
+        return fmt.Errorf("failed to delete old status index: %w", err)
+    }
+
+    // 4. Create new status index
+    newItem := map[string]types.AttributeValue{
+        "pk":     &types.AttributeValueMemberS{Value: "BUYREQUEST"},
+        "sk":     &types.AttributeValueMemberS{Value: fmt.Sprintf("STATUS#%s#ID#%d", newStatus, id)},
+        "Status": &types.AttributeValueMemberS{Value: newStatus},
+        "ID":     &types.AttributeValueMemberN{Value: fmt.Sprintf("%d", id)},
+    }
+
+    _, err = r.db.Client.PutItem(ctx, &dynamodb.PutItemInput{
+        TableName: aws.String(r.db.Table),
+        Item:      newItem,
+    })
+    if err != nil {
+        return fmt.Errorf("failed to create new status index: %w", err)
+    }
+
     return nil
 }
-
 
 func (r *BuyerRequestDBRepo) GetBuyerRequestByID(id int64) (*models.BuyingRequest, error) {
     // Prepare DynamoDB key

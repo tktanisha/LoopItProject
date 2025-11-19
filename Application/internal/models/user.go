@@ -5,29 +5,28 @@ import (
 	"time"
 )
 
-
 type User struct {
-	ID           int64       `json:"id" dynamodbav:"UserID"`
+	ID           int64      `json:"id,string" dynamodbav:"UserID"`
 	FullName     string     `json:"full_name" dynamodbav:"FullName"`
 	Email        string     `json:"email" dynamodbav:"Email"`
 	PhoneNumber  string     `json:"phone_number" dynamodbav:"PhoneNumber"`
 	Address      string     `json:"address" dynamodbav:"Address"`
 	PasswordHash string     `json:"password_hash" dynamodbav:"PasswordHash"`
-	SocietyID    int64        `json:"society_id" dynamodbav:"SocietyID"`
+	SocietyID    int64      `json:"society_id,string" dynamodbav:"SocietyID"`
 	Role         enums.Role `json:"role" dynamodbav:"Role"`
-	CreatedAt    time.Time    `json:"created_at" dynamodbav:"CreatedAt"`
+	CreatedAt    time.Time  `json:"created_at" dynamodbav:"CreatedAt"`
 	PK           string     `dynamodbav:"pk"`
 	SK           string     `dynamodbav:"sk"`
 }
 
 type UserFilter struct {
-	Search    string  `json:"search"`
-	Role      string   `json:"role"`
-	SocietyID string   `json:"society_id"`
+	Search    string `json:"search"`
+	Role      string `json:"role"`
+	SocietyID string `json:"society_id"`
 }
 
 type UserContext struct {
-	ID   int64
+	ID   int64   `json:"id,string"`
 	Name string
 	Role enums.Role
 }

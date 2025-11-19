@@ -6,9 +6,9 @@ import (
 )
 
 type Order struct {
-	ID             int64               `json:"id" dynamodbav:"ID"`
-	ProductID      int64               `json:"product_id" dynamodbav:"ProductID"`
-	UserID         int64               `json:"user_id" dynamodbav:"UserID"`
+	ID             int64               `json:"id,string" dynamodbav:"ID"`
+	ProductID      int64               `json:"product_id,string" dynamodbav:"ProductID"`
+	UserID         int64               `json:"user_id,string" dynamodbav:"UserID"`
 	StartDate      time.Time           `json:"start_date" dynamodbav:"StartDate"`
 	EndDate        time.Time           `json:"end_date" dynamodbav:"EndDate"`
 	TotalAmount    float64             `json:"total_amount" dynamodbav:"TotalAmount"`

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 	"time"
 
 	"loopit/internal/api/middleware"
@@ -27,7 +28,7 @@ type registerRequest struct {
     Password    string `json:"password"`
     PhoneNumber string `json:"phoneNumber"`
     Address     string `json:"address"`
-    SocietyID   int64  `json:"societyId"`
+    SocietyID   string `json:"societyId"`
 }
 
 var authService auth_service.AuthServiceInterface
@@ -63,9 +64,15 @@ func RegisterHandler(ctx context.Context, event events.APIGatewayProxyRequest) (
     if err := utils.ValidatePhoneNumber(req.PhoneNumber); err != nil {
         return response.LambdaResponse(http.StatusBadRequest, nil, err.Error()), nil
     }
-    if err := utils.ValidateAddress(req.Address); err != nil {
-        return response.LambdaResponse(http.StatusBadRequest, nil, err.Error()), nil
+    // if err := utils.ValidateAddress(req.Address); err != nil {
+    //     return response.LambdaResponse(http.StatusBadRequest, nil, err.Error()), nil
+    // }
+
+    societyID, errs := strconv.ParseInt(req.SocietyID, 10, 64)
+    if errs != nil {
+        return response.LambdaResponse(http.StatusBadRequest, nil, "Invalid society ID format"), nil
     }
+
 
     err := authService.Register(&models.User{
         FullName:     req.FullName,
@@ -73,7 +80,7 @@ func RegisterHandler(ctx context.Context, event events.APIGatewayProxyRequest) (
         PasswordHash: req.Password,
         PhoneNumber:  req.PhoneNumber,
         Address:      req.Address,
-        SocietyID:    req.SocietyID,
+        SocietyID:    societyID,
         CreatedAt:    time.Now(),
     })
     if err != nil {

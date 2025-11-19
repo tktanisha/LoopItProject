@@ -70,6 +70,10 @@ func LoginHandler(ctx context.Context, event events.APIGatewayProxyRequest) (eve
         Role: user.Role,
     }
 
+
+  
+    
+
     return response.LambdaResponse(http.StatusOK, map[string]any{
         "token": token,
         "user":  userCtx,

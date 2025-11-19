@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"strconv"
 
 	"loopit/internal/api/middleware"
 	"loopit/internal/db"
@@ -43,13 +44,16 @@ func init() {
 
 func Handler(ctx context.Context, event events.APIGatewayProxyRequest, userCtx *models.UserContext) (events.APIGatewayProxyResponse, error) {
     var payload struct {
-        OrderID int64 `json:"order_id"`
+        OrderID string `json:"order_id"`
     }
     if err := json.Unmarshal([]byte(event.Body), &payload); err != nil {
         return response.LambdaResponse(http.StatusBadRequest, nil, "Invalid request payload"), nil
     }
-
-    if err := returnRequestService.CreateReturnRequest(userCtx.ID, payload.OrderID); err != nil {
+    orderId, err := strconv.ParseInt(payload.OrderID, 10, 64)
+    if err != nil {
+        return response.LambdaResponse(http.StatusBadRequest, nil, "Invalid product ID format"), nil
+    }
+    if err := returnRequestService.CreateReturnRequest(userCtx.ID, orderId); err != nil {
         return response.LambdaResponse(http.StatusBadRequest, nil, err.Error()), nil
     }
 

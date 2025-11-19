@@ -3,9 +3,9 @@ package models
 import "time"
 
 type Product struct {
-	ID          int64     `json:"id" dynamodbav:"ID"`
-	LenderID    int64     `json:"lender_id" dynamodbav:"LenderID"`
-	CategoryID  int64     `json:"category_id" dynamodbav:"CategoryID"`
+	ID          int64     `json:"id,string" dynamodbav:"ID"`
+	LenderID    int64     `json:"lender_id,string" dynamodbav:"LenderID"`
+	CategoryID  int64     `json:"category_id,string" dynamodbav:"CategoryID"`
 	Name        string    `json:"name" dynamodbav:"Name"`
 	Description string    `json:"description" dynamodbav:"Description"`
 	Duration    int       `json:"duration" dynamodbav:"Duration"`

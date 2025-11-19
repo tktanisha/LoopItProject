@@ -740,14 +740,43 @@ func (r *ProductDBRepo) FindAll(filters models.ProductFilter) ([]*models.Product
 func (r *ProductDBRepo) Update(product *models.Product) error {
     ctx := context.TODO()
 
-    // Common update expression
-    updateExpr := "SET #n = :name, Description = :description, #dur = :duration, IsAvailable = :isAvailable, CategoryID = :categoryId, LenderID = :lenderId"
-
-    exprAttrNames := map[string]string{
-        "#n":   "Name",
-        "#dur": "Duration",
+    // 1. Fetch existing product to get old CategoryID and Name
+    existing, err := r.FindByID(product.ID)
+    if err != nil {
+        return fmt.Errorf("failed to fetch existing product: %w", err)
     }
 
+    // 2. Delete old category index if category changed
+    if existing.Product.CategoryID != product.CategoryID {
+        _, err := r.db.Client.DeleteItem(ctx, &dynamodb.DeleteItemInput{
+            TableName: aws.String(r.db.Table),
+            Key: map[string]types.AttributeValue{
+                "pk": &types.AttributeValueMemberS{Value: fmt.Sprintf("CATEGORY#%d", existing.Product.CategoryID)},
+                "sk": &types.AttributeValueMemberS{Value: fmt.Sprintf("PRODUCT#%d", product.ID)},
+            },
+        })
+        if err != nil {
+            return fmt.Errorf("failed to delete old category index: %w", err)
+        }
+    }
+
+    // 3. Delete old name index if name changed
+    if !strings.EqualFold(existing.Product.Name, product.Name) {
+        _, err := r.db.Client.DeleteItem(ctx, &dynamodb.DeleteItemInput{
+            TableName: aws.String(r.db.Table),
+            Key: map[string]types.AttributeValue{
+                "pk": &types.AttributeValueMemberS{Value: "PRODUCT"},
+                "sk": &types.AttributeValueMemberS{Value: fmt.Sprintf("NAME#%s#ID#%d", strings.ToLower(existing.Product.Name), product.ID)},
+            },
+        })
+        if err != nil {
+            return fmt.Errorf("failed to delete old name index: %w", err)
+        }
+    }
+
+    // 4. Update all current keys (main, lender, new name, new category)
+    updateExpr := "SET #n = :name, Description = :description, #dur = :duration, IsAvailable = :isAvailable, CategoryID = :categoryId, LenderID = :lenderId"
+    exprAttrNames := map[string]string{"#n": "Name", "#dur": "Duration"}
     exprAttrValues := map[string]types.AttributeValue{
         ":name":        &types.AttributeValueMemberS{Value: product.Name},
         ":description": &types.AttributeValueMemberS{Value: product.Description},
@@ -757,31 +786,17 @@ func (r *ProductDBRepo) Update(product *models.Product) error {
         ":lenderId":    &types.AttributeValueMemberN{Value: fmt.Sprintf("%d", product.LenderID)},
     }
 
-    // Keys to update
     keys := []map[string]types.AttributeValue{
-        { // Main product record
-            "pk": &types.AttributeValueMemberS{Value: "PRODUCT"},
-            "sk": &types.AttributeValueMemberS{Value: fmt.Sprintf("PRODUCT#%d", product.ID)},
-        },
-        { // Lender index
-            "pk": &types.AttributeValueMemberS{Value: "PRODUCT"},
-            "sk": &types.AttributeValueMemberS{Value: fmt.Sprintf("LENDER#%d#ID#%d", product.LenderID, product.ID)},
-        },
-        { // Name index
-            "pk": &types.AttributeValueMemberS{Value: "PRODUCT"},
-            "sk": &types.AttributeValueMemberS{Value: fmt.Sprintf("NAME#%s#ID#%d", strings.ToLower(product.Name), product.ID)},
-        },
-        { // Category index
-            "pk": &types.AttributeValueMemberS{Value: fmt.Sprintf("CATEGORY#%d", product.CategoryID)},
-            "sk": &types.AttributeValueMemberS{Value: fmt.Sprintf("PRODUCT#%d", product.ID)},
-        },
+        {"pk": &types.AttributeValueMemberS{Value: "PRODUCT"}, "sk": &types.AttributeValueMemberS{Value: fmt.Sprintf("PRODUCT#%d", product.ID)}},
+        {"pk": &types.AttributeValueMemberS{Value: "PRODUCT"}, "sk": &types.AttributeValueMemberS{Value: fmt.Sprintf("LENDER#%d#ID#%d", product.LenderID, product.ID)}},
+        {"pk": &types.AttributeValueMemberS{Value: "PRODUCT"}, "sk": &types.AttributeValueMemberS{Value: fmt.Sprintf("NAME#%s#ID#%d", strings.ToLower(product.Name), product.ID)}},
+        {"pk": &types.AttributeValueMemberS{Value: fmt.Sprintf("CATEGORY#%d", product.CategoryID)}, "sk": &types.AttributeValueMemberS{Value: fmt.Sprintf("PRODUCT#%d", product.ID)}},
     }
 
-    // Update all keys
     for _, key := range keys {
         _, err := r.db.Client.UpdateItem(ctx, &dynamodb.UpdateItemInput{
-            TableName:                 aws.String(r.db.Table),
-            Key:                       key,
+            TableName: aws.String(r.db.Table),
+            Key:       key,
             UpdateExpression:          aws.String(updateExpr),
             ExpressionAttributeNames:  exprAttrNames,
             ExpressionAttributeValues: exprAttrValues,
@@ -793,7 +808,6 @@ func (r *ProductDBRepo) Update(product *models.Product) error {
 
     return nil
 }
-
 
 func (r *ProductDBRepo) Delete(productID int64) error {
     ctx := context.TODO()

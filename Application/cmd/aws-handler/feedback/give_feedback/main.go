@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"strconv"
 
 	"loopit/internal/api/middleware"
 	"loopit/internal/db"
@@ -43,7 +44,7 @@ func init() {
 }
 func Handler(ctx context.Context, event events.APIGatewayProxyRequest, userCtx *models.UserContext) (events.APIGatewayProxyResponse, error) {
     var payload struct {
-        OrderID      int64    `json:"order_id"`
+        OrderID      string `json:"order_id"`
         FeedbackText string `json:"feedback_text"`
         Rating       int    `json:"rating"`
     }
@@ -51,8 +52,13 @@ func Handler(ctx context.Context, event events.APIGatewayProxyRequest, userCtx *
         return response.LambdaResponse(http.StatusBadRequest, nil, "Invalid request payload"), nil
     }
 
+    orderId, errs := strconv.ParseInt(payload.OrderID, 10, 64)
+    if errs != nil {
+        return response.LambdaResponse(http.StatusBadRequest, nil, "Invalid order ID format"), nil
+    }
+
     // Basic validations
-    if err := utils.ValidateOrderID(payload.OrderID); err != nil {
+    if err := utils.ValidateOrderID(orderId); err != nil {
         return response.LambdaResponse(http.StatusBadRequest, nil, err.Error()), nil
     }
     if err := utils.ValidateFeedbackText(payload.FeedbackText); err != nil {
@@ -62,7 +68,7 @@ func Handler(ctx context.Context, event events.APIGatewayProxyRequest, userCtx *
         return response.LambdaResponse(http.StatusBadRequest, nil, err.Error()), nil
     }
 
-    if err := feedbackService.GiveFeedback(payload.OrderID, payload.FeedbackText, payload.Rating, userCtx); err != nil {
+    if err := feedbackService.GiveFeedback(orderId, payload.FeedbackText, payload.Rating, userCtx); err != nil {
         return response.LambdaResponse(http.StatusBadRequest, nil, err.Error()), nil
     }
 
