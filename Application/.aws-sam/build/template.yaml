@@ -1,0 +1,641 @@
+Transform: AWS::Serverless-2016-10-31
+Globals:
+  Function:
+    Architectures:
+    - x86_64
+    Timeout: 200
+    Handler: bootstrap
+    Runtime: provided.al2023
+Resources:
+  Api:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: v3
+      Cors:
+        AllowMethods: '''GET,POST,PUT,DELETE,OPTIONS,PATCH'''
+        AllowHeaders: '''Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'''
+        AllowOrigin: '''*'''
+  Login:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: go1.x
+      SamResourceId: Login
+    Properties:
+      CodeUri: Login
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Method: post
+            Path: /auth/login
+            RestApiId:
+              Ref: Api
+      Policies:
+      - AWSLambdaBasicExecutionRole
+      - DynamoDBCrudPolicy:
+          TableName:
+            Fn::ImportValue: Loopit-DynamoTableName
+  register:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: go1.x
+      SamResourceId: register
+    Properties:
+      CodeUri: register
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Method: post
+            Path: /auth/register
+            RestApiId:
+              Ref: Api
+      Policies:
+      - AWSLambdaBasicExecutionRole
+      - DynamoDBCrudPolicy:
+          TableName:
+            Fn::ImportValue: Loopit-DynamoTableName
+  CreateCategory:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: go1.x
+      SamResourceId: CreateCategory
+    Properties:
+      CodeUri: CreateCategory
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Method: post
+            Path: /categories
+            RestApiId:
+              Ref: Api
+      Policies:
+      - AWSLambdaBasicExecutionRole
+      - DynamoDBCrudPolicy:
+          TableName:
+            Fn::ImportValue: Loopit-DynamoTableName
+  GetAllCategories:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: go1.x
+      SamResourceId: GetAllCategories
+    Properties:
+      CodeUri: GetAllCategories
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Method: get
+            Path: /categories
+            RestApiId:
+              Ref: Api
+      Policies:
+      - AWSLambdaBasicExecutionRole
+      - DynamoDBCrudPolicy:
+          TableName:
+            Fn::ImportValue: Loopit-DynamoTableName
+  UpdateCategory:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: go1.x
+      SamResourceId: UpdateCategory
+    Properties:
+      CodeUri: UpdateCategory
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Method: put
+            Path: /categories/{id}
+            RestApiId:
+              Ref: Api
+      Policies:
+      - AWSLambdaBasicExecutionRole
+      - DynamoDBCrudPolicy:
+          TableName:
+            Fn::ImportValue: Loopit-DynamoTableName
+  DeleteCategory:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: go1.x
+      SamResourceId: DeleteCategory
+    Properties:
+      CodeUri: DeleteCategory
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Method: delete
+            Path: /categories/{id}
+            RestApiId:
+              Ref: Api
+      Policies:
+      - AWSLambdaBasicExecutionRole
+      - DynamoDBCrudPolicy:
+          TableName:
+            Fn::ImportValue: Loopit-DynamoTableName
+  CreateSociety:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: go1.x
+      SamResourceId: CreateSociety
+    Properties:
+      CodeUri: CreateSociety
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Method: post
+            Path: /societies
+            RestApiId:
+              Ref: Api
+      Policies:
+      - AWSLambdaBasicExecutionRole
+      - DynamoDBCrudPolicy:
+          TableName:
+            Fn::ImportValue: Loopit-DynamoTableName
+  GetAllSociety:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: go1.x
+      SamResourceId: GetAllSociety
+    Properties:
+      CodeUri: GetAllSociety
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Method: get
+            Path: /societies
+            RestApiId:
+              Ref: Api
+      Policies:
+      - AWSLambdaBasicExecutionRole
+      - DynamoDBCrudPolicy:
+          TableName:
+            Fn::ImportValue: Loopit-DynamoTableName
+  UpdateSociety:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: go1.x
+      SamResourceId: UpdateSociety
+    Properties:
+      CodeUri: UpdateSociety
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Method: put
+            Path: /societies/{id}
+            RestApiId:
+              Ref: Api
+      Policies:
+      - AWSLambdaBasicExecutionRole
+      - DynamoDBCrudPolicy:
+          TableName:
+            Fn::ImportValue: Loopit-DynamoTableName
+  DeleteSociety:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: go1.x
+      SamResourceId: DeleteSociety
+    Properties:
+      CodeUri: DeleteSociety
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Method: delete
+            Path: /societies/{id}
+            RestApiId:
+              Ref: Api
+      Policies:
+      - AWSLambdaBasicExecutionRole
+      - DynamoDBCrudPolicy:
+          TableName:
+            Fn::ImportValue: Loopit-DynamoTableName
+  DeleteUser:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: go1.x
+      SamResourceId: DeleteUser
+    Properties:
+      CodeUri: DeleteUser
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Method: delete
+            Path: /users/{id}
+            RestApiId:
+              Ref: Api
+      Policies:
+      - AWSLambdaBasicExecutionRole
+      - DynamoDBCrudPolicy:
+          TableName:
+            Fn::ImportValue: Loopit-DynamoTableName
+  GetAllUsers:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: go1.x
+      SamResourceId: GetAllUsers
+    Properties:
+      CodeUri: GetAllUsers
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Method: get
+            Path: /users
+            RestApiId:
+              Ref: Api
+      Policies:
+      - AWSLambdaBasicExecutionRole
+      - DynamoDBCrudPolicy:
+          TableName:
+            Fn::ImportValue: Loopit-DynamoTableName
+  GetUserById:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: go1.x
+      SamResourceId: GetUserById
+    Properties:
+      CodeUri: GetUserById
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Method: get
+            Path: /users/{id}
+            RestApiId:
+              Ref: Api
+      Policies:
+      - AWSLambdaBasicExecutionRole
+      - DynamoDBCrudPolicy:
+          TableName:
+            Fn::ImportValue: Loopit-DynamoTableName
+  BecomeLender:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: go1.x
+      SamResourceId: BecomeLender
+    Properties:
+      CodeUri: BecomeLender
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Method: patch
+            Path: /users/become-lender
+            RestApiId:
+              Ref: Api
+      Policies:
+      - AWSLambdaBasicExecutionRole
+      - DynamoDBCrudPolicy:
+          TableName:
+            Fn::ImportValue: Loopit-DynamoTableName
+  CreateProduct:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: go1.x
+      SamResourceId: CreateProduct
+    Properties:
+      CodeUri: CreateProduct
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Method: post
+            Path: /products/create
+            RestApiId:
+              Ref: Api
+      Policies:
+      - AWSLambdaBasicExecutionRole
+      - DynamoDBCrudPolicy:
+          TableName:
+            Fn::ImportValue: Loopit-DynamoTableName
+  GetAllProduct:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: go1.x
+      SamResourceId: GetAllProduct
+    Properties:
+      CodeUri: GetAllProduct
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Method: get
+            Path: /products
+            RestApiId:
+              Ref: Api
+      Policies:
+      - AWSLambdaBasicExecutionRole
+      - DynamoDBCrudPolicy:
+          TableName:
+            Fn::ImportValue: Loopit-DynamoTableName
+  UpdateProduct:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: go1.x
+      SamResourceId: UpdateProduct
+    Properties:
+      CodeUri: UpdateProduct
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Method: put
+            Path: /products/{id}/update
+            RestApiId:
+              Ref: Api
+      Policies:
+      - AWSLambdaBasicExecutionRole
+      - DynamoDBCrudPolicy:
+          TableName:
+            Fn::ImportValue: Loopit-DynamoTableName
+  DeleteProduct:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: go1.x
+      SamResourceId: DeleteProduct
+    Properties:
+      CodeUri: DeleteProduct
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Method: delete
+            Path: /products/{id}/delete
+            RestApiId:
+              Ref: Api
+      Policies:
+      - AWSLambdaBasicExecutionRole
+      - DynamoDBCrudPolicy:
+          TableName:
+            Fn::ImportValue: Loopit-DynamoTableName
+  GetProductById:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: go1.x
+      SamResourceId: GetProductById
+    Properties:
+      CodeUri: GetProductById
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Method: get
+            Path: /products/{id}
+            RestApiId:
+              Ref: Api
+      Policies:
+      - AWSLambdaBasicExecutionRole
+      - DynamoDBCrudPolicy:
+          TableName:
+            Fn::ImportValue: Loopit-DynamoTableName
+  UploadImageFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: go1.x
+      SamResourceId: UploadImageFunction
+    Properties:
+      CodeUri: UploadImageFunction
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Method: get
+            Path: /images/presigned-url/{fileName}
+            RestApiId:
+              Ref: Api
+      Policies:
+      - AWSLambdaBasicExecutionRole
+      - DynamoDBCrudPolicy:
+          TableName:
+            Fn::ImportValue: Loopit-DynamoTableName
+      - Statement:
+        - Effect: Allow
+          Action: '*'
+          Resource: arn:aws:s3:::loopit-product-image/*
+  CreateBuyRequest:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: go1.x
+      SamResourceId: CreateBuyRequest
+    Properties:
+      CodeUri: CreateBuyRequest
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Method: post
+            Path: /buyer-requests
+            RestApiId:
+              Ref: Api
+      Policies:
+      - AWSLambdaBasicExecutionRole
+      - DynamoDBCrudPolicy:
+          TableName:
+            Fn::ImportValue: Loopit-DynamoTableName
+  GetAllBuyRequest:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: go1.x
+      SamResourceId: GetAllBuyRequest
+    Properties:
+      CodeUri: GetAllBuyRequest
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Method: get
+            Path: /buyer-requests
+            RestApiId:
+              Ref: Api
+      Policies:
+      - AWSLambdaBasicExecutionRole
+      - DynamoDBCrudPolicy:
+          TableName:
+            Fn::ImportValue: Loopit-DynamoTableName
+  UpdateBuyRequest:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: go1.x
+      SamResourceId: UpdateBuyRequest
+    Properties:
+      CodeUri: UpdateBuyRequest
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Method: patch
+            Path: /buyer-requests/{requestId}/update
+            RestApiId:
+              Ref: Api
+      Policies:
+      - AWSLambdaBasicExecutionRole
+      - DynamoDBCrudPolicy:
+          TableName:
+            Fn::ImportValue: Loopit-DynamoTableName
+  GetOrderHistory:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: go1.x
+      SamResourceId: GetOrderHistory
+    Properties:
+      CodeUri: GetOrderHistory
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Method: get
+            Path: /orders/history
+            RestApiId:
+              Ref: Api
+      Policies:
+      - AWSLambdaBasicExecutionRole
+      - DynamoDBCrudPolicy:
+          TableName:
+            Fn::ImportValue: Loopit-DynamoTableName
+  MarkOrderAsReturned:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: go1.x
+      SamResourceId: MarkOrderAsReturned
+    Properties:
+      CodeUri: MarkOrderAsReturned
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Method: patch
+            Path: /orders/{orderId}/return
+            RestApiId:
+              Ref: Api
+      Policies:
+      - AWSLambdaBasicExecutionRole
+      - DynamoDBCrudPolicy:
+          TableName:
+            Fn::ImportValue: Loopit-DynamoTableName
+  GetAllApprovedAwaitingOrders:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: go1.x
+      SamResourceId: GetAllApprovedAwaitingOrders
+    Properties:
+      CodeUri: GetAllApprovedAwaitingOrders
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Method: get
+            Path: /orders/approved-awaiting
+            RestApiId:
+              Ref: Api
+      Policies:
+      - AWSLambdaBasicExecutionRole
+      - DynamoDBCrudPolicy:
+          TableName:
+            Fn::ImportValue: Loopit-DynamoTableName
+  GetLenderOrders:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: go1.x
+      SamResourceId: GetLenderOrders
+    Properties:
+      CodeUri: GetLenderOrders
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Method: get
+            Path: /orders/lender
+            RestApiId:
+              Ref: Api
+      Policies:
+      - AWSLambdaBasicExecutionRole
+      - DynamoDBCrudPolicy:
+          TableName:
+            Fn::ImportValue: Loopit-DynamoTableName
+  CreateReturnRequest:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: go1.x
+      SamResourceId: CreateReturnRequest
+    Properties:
+      CodeUri: CreateReturnRequest
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Method: post
+            Path: /return-requests
+            RestApiId:
+              Ref: Api
+      Policies:
+      - AWSLambdaBasicExecutionRole
+      - DynamoDBCrudPolicy:
+          TableName:
+            Fn::ImportValue: Loopit-DynamoTableName
+  GetPendingReturnRequests:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: go1.x
+      SamResourceId: GetPendingReturnRequests
+    Properties:
+      CodeUri: GetPendingReturnRequests
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Method: get
+            Path: /return-requests
+            RestApiId:
+              Ref: Api
+      Policies:
+      - AWSLambdaBasicExecutionRole
+      - DynamoDBCrudPolicy:
+          TableName:
+            Fn::ImportValue: Loopit-DynamoTableName
+  UpdateReturnRequestStatus:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: go1.x
+      SamResourceId: UpdateReturnRequestStatus
+    Properties:
+      CodeUri: UpdateReturnRequestStatus
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Method: patch
+            Path: /return-requests/{requestId}/update
+            RestApiId:
+              Ref: Api
+      Policies:
+      - AWSLambdaBasicExecutionRole
+      - DynamoDBCrudPolicy:
+          TableName:
+            Fn::ImportValue: Loopit-DynamoTableName
+  CreateFeedback:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: go1.x
+      SamResourceId: CreateFeedback
+    Properties:
+      CodeUri: CreateFeedback
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Method: post
+            Path: /feedbacks
+            RestApiId:
+              Ref: Api
+      Policies:
+      - AWSLambdaBasicExecutionRole
+      - DynamoDBCrudPolicy:
+          TableName:
+            Fn::ImportValue: Loopit-DynamoTableName

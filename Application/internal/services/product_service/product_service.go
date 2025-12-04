@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"loopit/internal/constants"
 	"loopit/internal/enums"
 	"loopit/internal/models"
 	"loopit/internal/repository/product_repo"
@@ -42,10 +41,10 @@ func (p *ProductService) GetProductByID(id int64) (*models.ProductResponse, erro
 
 	product, err := p.productRepo.FindByID(id)
 	if err != nil {
-		log.Print("err in service=",err)
+		log.Print("err in service=", err)
 		return nil, errors.New("product not found")
 	}
-	log.Print("product in service=",product)
+	log.Print("product in service=", product)
 
 	return product, nil
 }
@@ -64,10 +63,10 @@ func (p *ProductService) CreateProduct(product *models.Product, userCtx *models.
 	product.CreatedAt = time.Now()
 	product.IsAvailable = true
 
-	product.ImageUrl = constants.CategoryImageMap[fmt.Sprint(product.CategoryID)]
-	if product.ImageUrl == "" {
-		product.ImageUrl = constants.CategoryImageMap["Default"]
-	}
+	// product.ImageUrl = constants.CategoryImageMap[fmt.Sprint(product.CategoryID)]
+	// if product.ImageUrl == "" {
+	// 	product.ImageUrl = constants.CategoryImageMap["Default"]
+	// }
 
 	err := p.productRepo.Create(product)
 	if err != nil {
@@ -96,10 +95,7 @@ func (p *ProductService) UpdateProduct(productID int64, name string, description
 
 	product.Product.Description = description
 	product.Product.CategoryID = categoryID
-	product.Product.ImageUrl = constants.CategoryImageMap[fmt.Sprint(categoryID)]
-	if product.Product.ImageUrl == "" {
-		product.Product.ImageUrl = constants.CategoryImageMap["default"]
-	}
+
 	err = p.productRepo.Update(&product.Product)
 	if err != nil {
 		return err
@@ -117,7 +113,7 @@ func (p *ProductService) DeleteProduct(id int64, userCtx *models.UserContext) er
 		return errors.New("only lenders can delete products")
 	}
 	product, err := p.productRepo.FindByID(id)
-    log.Print("error after find by id=",err)
+	log.Print("error after find by id=", err)
 	if err != nil {
 		return errors.New("product not found")
 
@@ -127,7 +123,7 @@ func (p *ProductService) DeleteProduct(id int64, userCtx *models.UserContext) er
 	}
 	err = p.productRepo.Delete(id)
 	if err != nil {
-		log.Print("error in delete service=",err)
+		log.Print("error in delete service=", err)
 		return err
 	}
 	return nil

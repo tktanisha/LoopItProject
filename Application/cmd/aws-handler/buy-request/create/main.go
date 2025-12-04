@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
-	"strconv"
 
 	"loopit/internal/api/middleware"
 	"loopit/internal/db"
@@ -26,43 +25,39 @@ var buyerRequestService buyer_request_service.BuyerRequestServiceInterface
 var lenderRepo lender_repo.LenderRepo
 
 func init() {
-    dynamo, err := db.ConnectDynamo()
-    if err != nil {
-        panic("Failed to connect to DynamoDB: " + err.Error())
-    }
+	dynamo, err := db.ConnectDynamo()
+	if err != nil {
+		panic("Failed to connect to DynamoDB: " + err.Error())
+	}
 
-    buyerReqRepo := buyer_request_repo.NewBuyerRequestDBRepo(dynamo)
-    categoryRepo := category_repo.NewCategoryDBRepo(dynamo)
-    lenderRepo = lender_repo.NewLenderDBRepo(dynamo)
-    userRepo := user_repo.NewUserDBRepo(dynamo,lenderRepo)
-    productRepo := product_repo.NewProductDBRepo(dynamo,categoryRepo,userRepo)
-    orderRepo := order_repo.NewOrderDBRepo(dynamo,productRepo)
+	buyerReqRepo := buyer_request_repo.NewBuyerRequestDBRepo(dynamo)
+	categoryRepo := category_repo.NewCategoryDBRepo(dynamo)
+	lenderRepo = lender_repo.NewLenderDBRepo(dynamo)
+	userRepo := user_repo.NewUserDBRepo(dynamo, lenderRepo)
+	productRepo := product_repo.NewProductDBRepo(dynamo, categoryRepo, userRepo)
+	orderRepo := order_repo.NewOrderDBRepo(dynamo, productRepo)
 
-    buyerRequestService = buyer_request_service.NewBuyerRequestService(buyerReqRepo, productRepo, orderRepo, categoryRepo)
+	buyerRequestService = buyer_request_service.NewBuyerRequestService(buyerReqRepo, productRepo, orderRepo, categoryRepo)
 }
+
 func Handler(ctx context.Context, event events.APIGatewayProxyRequest, userCtx *models.UserContext) (events.APIGatewayProxyResponse, error) {
-    var payload struct {
-        ProductID string `json:"product_id"`
-    }
-    if err := json.Unmarshal([]byte(event.Body), &payload); err != nil {
-        return response.LambdaResponse(http.StatusBadRequest, nil, "Invalid request payload"), nil
-    }
+	var payload struct {
+		ProductID int64 `json:"product_id"`
+	}
+	if err := json.Unmarshal([]byte(event.Body), &payload); err != nil {
+		return response.LambdaResponse(http.StatusBadRequest, nil, "Invalid request payload"), nil
+	}
 
-    productID, err := strconv.ParseInt(payload.ProductID, 10, 64)
-    if err != nil {
-        return response.LambdaResponse(http.StatusBadRequest, nil, "Invalid product ID format"), nil
-    }
+	if err := buyerRequestService.CreateBuyerRequest(payload.ProductID, userCtx); err != nil {
+		return response.LambdaResponse(http.StatusBadRequest, nil, err.Error()), nil
+	}
 
-    if err := buyerRequestService.CreateBuyerRequest(productID, userCtx); err != nil {
-        return response.LambdaResponse(http.StatusBadRequest, nil, err.Error()), nil
-    }
-
-    return response.LambdaResponse(http.StatusCreated, map[string]interface{}{
-        "status":  true,
-        "message": "Buyer request created successfully",
-    }, ""), nil
+	return response.LambdaResponse(http.StatusCreated, map[string]interface{}{
+		"status":  true,
+		"message": "Buyer request created successfully",
+	}, ""), nil
 }
 
 func main() {
-    lambda.Start(middleware.WithCORS(middleware.WithAuth(Handler)))
+	lambda.Start(middleware.WithCORS(middleware.WithAuth(Handler)))
 }

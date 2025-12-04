@@ -23,18 +23,17 @@ import (
 var productService product_service.ProductServiceInterface
 var categoryRepo category_repo.CategoryRepo
 var lenderRepo lender_repo.LenderRepo
-	
 
 func init() {
-    dynamo, err := db.ConnectDynamo()
-    if err != nil {
-        panic("Failed to connect to DynamoDB: " + err.Error())
-    }
-    lenderRepo = lender_repo.NewLenderDBRepo(dynamo) 
-    userRepo := user_repo.NewUserDBRepo(dynamo,lenderRepo)
-    categoryRepo = category_repo.NewCategoryDBRepo(dynamo)
-    productRepo := product_repo.NewProductDBRepo(dynamo,categoryRepo ,userRepo)
-    productService = product_service.NewProductService(productRepo, userRepo)
+	dynamo, err := db.ConnectDynamo()
+	if err != nil {
+		panic("Failed to connect to DynamoDB: " + err.Error())
+	}
+	lenderRepo = lender_repo.NewLenderDBRepo(dynamo)
+	userRepo := user_repo.NewUserDBRepo(dynamo, lenderRepo)
+	categoryRepo = category_repo.NewCategoryDBRepo(dynamo)
+	productRepo := product_repo.NewProductDBRepo(dynamo, categoryRepo, userRepo)
+	productService = product_service.NewProductService(productRepo, userRepo)
 }
 
 // func Handler(ctx context.Context, event events.APIGatewayProxyRequest,userCtx *models.UserContext ) (events.APIGatewayProxyResponse, error) {
@@ -59,42 +58,43 @@ func init() {
 // }
 
 type ProductInput struct {
-    CategoryIDStr  string    `json:"category_id"` 
-    Name           string    `json:"name"`
-    Description    string    `json:"description"`
-    Duration       int       `json:"duration"`
+	CategoryIDStr string `json:"category_id"`
+	Name          string `json:"name"`
+	Description   string `json:"description"`
+	Duration      int    `json:"duration"`
+	ImageUrl      string `json:"image_url"`
 }
 
-
 func Handler(ctx context.Context, event events.APIGatewayProxyRequest, userCtx *models.UserContext) (events.APIGatewayProxyResponse, error) {
-    var input ProductInput
-    if err := json.Unmarshal([]byte(event.Body), &input); err != nil {
-        return response.LambdaResponse(http.StatusBadRequest, nil, "Invalid request payload"), nil
-    }
+	var input ProductInput
+	if err := json.Unmarshal([]byte(event.Body), &input); err != nil {
+		return response.LambdaResponse(http.StatusBadRequest, nil, "Invalid request payload"), nil
+	}
 
-    categoryID, err := strconv.ParseInt(input.CategoryIDStr, 10, 64)
-    if err != nil {
-        return response.LambdaResponse(http.StatusBadRequest, nil, "Invalid category ID format"), nil
-    }
+	categoryID, err := strconv.ParseInt(input.CategoryIDStr, 10, 64)
+	if err != nil {
+		return response.LambdaResponse(http.StatusBadRequest, nil, "Invalid category ID format"), nil
+	}
 
-    product := models.Product{
-        CategoryID:  categoryID,
-        Name:        input.Name,
-        Description: input.Description,
-        Duration:    input.Duration,
-    }
+	product := models.Product{
+		CategoryID:  categoryID,
+		Name:        input.Name,
+		Description: input.Description,
+		Duration:    input.Duration,
+		ImageUrl:    input.ImageUrl,
+	}
 
-    if err := productService.CreateProduct(&product, userCtx); err != nil {
-        return response.LambdaResponse(http.StatusForbidden, nil, err.Error()), nil
-    }
+	if err := productService.CreateProduct(&product, userCtx); err != nil {
+		return response.LambdaResponse(http.StatusForbidden, nil, err.Error()), nil
+	}
 
-    return response.LambdaResponse(http.StatusCreated, map[string]interface{}{
-        "status":  true,
-        "message": "Product created successfully",
-        "product": product,
-    }, ""), nil
+	return response.LambdaResponse(http.StatusCreated, map[string]interface{}{
+		"status":  true,
+		"message": "Product created successfully",
+		"product": product,
+	}, ""), nil
 }
 
 func main() {
-    lambda.Start(middleware.WithCORS(middleware.WithAuth(Handler)))
+	lambda.Start(middleware.WithCORS(middleware.WithAuth(Handler)))
 }

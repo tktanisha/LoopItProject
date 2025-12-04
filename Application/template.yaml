@@ -365,6 +365,28 @@ Resources:
         - DynamoDBCrudPolicy:
             TableName: !ImportValue Loopit-DynamoTableName
 
+  UploadImageFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: go1.x
+    Properties:
+      CodeUri: ./cmd/aws-handler/product/upload
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Method: get
+            Path:  /images/presigned-url/{fileName}
+            RestApiId: !Ref Api
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - DynamoDBCrudPolicy:
+            TableName: !ImportValue Loopit-DynamoTableName
+        - Statement:
+            - Effect: Allow
+              Action: "*"
+              Resource: arn:aws:s3:::loopit-product-image/*    
+
   #buyRequest lambdas
   CreateBuyRequest:
     Type: AWS::Serverless::Function
