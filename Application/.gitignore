@@ -1,7 +1,0 @@
-data
-.env
-.air.toml
-tmp
-build-errors.log
-logs
-.aws-sam

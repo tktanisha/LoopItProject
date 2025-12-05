@@ -218,12 +218,14 @@ func (r *BuyerRequestDBRepo) GetAllBuyerRequests(id *int64, filterStatuses []str
 				":skPrefix": &types.AttributeValueMemberS{Value: skPrefix},
 			},
 		}
+
 	} else {
 		queryInput = dynamodb.QueryInput{
 			TableName:              aws.String(r.db.Table),
-			KeyConditionExpression: aws.String("pk = :pk"),
+			KeyConditionExpression: aws.String("pk = :pk AND begins_with(sk, :skPrefix)"),
 			ExpressionAttributeValues: map[string]types.AttributeValue{
-				":pk": &types.AttributeValueMemberS{Value: "BUYREQUEST"},
+				":pk":       &types.AttributeValueMemberS{Value: "BUYREQUEST"},
+				":skPrefix": &types.AttributeValueMemberS{Value: "ID#"},
 			},
 		}
 	}

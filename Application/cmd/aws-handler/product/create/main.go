@@ -36,27 +36,6 @@ func init() {
 	productService = product_service.NewProductService(productRepo, userRepo)
 }
 
-// func Handler(ctx context.Context, event events.APIGatewayProxyRequest,userCtx *models.UserContext ) (events.APIGatewayProxyResponse, error) {
-//     var product models.Product
-//     if err := json.Unmarshal([]byte(event.Body), &product); err != nil {
-//         return response.LambdaResponse(http.StatusBadRequest, nil, "Invalid request payload"), nil
-//     }
-
-//     if err := productService.CreateProduct(&product, userCtx); err != nil {
-//         return response.LambdaResponse(http.StatusForbidden, nil, err.Error()), nil
-//     }
-
-//     return response.LambdaResponse(http.StatusCreated, map[string]interface{}{
-//         "status":  true,
-//         "message": "Product created successfully",
-//         "product": product,
-//     }, ""), nil
-// }
-
-// func main() {
-//     lambda.Start(middleware.WithCORS(middleware.WithAuth(Handler)))
-// }
-
 type ProductInput struct {
 	CategoryIDStr string `json:"category_id"`
 	Name          string `json:"name"`

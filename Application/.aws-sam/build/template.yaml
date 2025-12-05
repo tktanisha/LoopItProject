@@ -10,7 +10,7 @@ Resources:
   Api:
     Type: AWS::Serverless::Api
     Properties:
-      StageName: v3
+      StageName: v6
       Cors:
         AllowMethods: '''GET,POST,PUT,DELETE,OPTIONS,PATCH'''
         AllowHeaders: '''Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'''
@@ -406,8 +406,8 @@ Resources:
         ApiEvent:
           Type: Api
           Properties:
-            Method: get
-            Path: /images/presigned-url/{fileName}
+            Method: post
+            Path: /images/upload
             RestApiId:
               Ref: Api
       Policies:
